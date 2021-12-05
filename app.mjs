@@ -6,7 +6,6 @@ import functions from './functions.js';
 const bot = new Telegraf(security.TELEGRAM_BOT_TOKEN);
 const STATE_NORMAL = 'normal';
 const STATE_CLASS = 'waiting a class';
-const STATE_CONFIRMATION = 'waiting a confirmation';
 let state = STATE_NORMAL;
 let users_class = null, users_letter = null, users_grade = null;
 
@@ -30,21 +29,15 @@ bot.on('message', async ctx =>
 	}
 	if (state === STATE_CLASS) {
 		users_class = textLC;
-		[users_grade, users_letter] = functions.valid_class(users_class);
-		if ((users_grade !== null) && (users_letter !== null)) {
-			state = STATE_CONFIRMATION;
-			return bot.telegram.sendMessage(chatId, `${users_grade}-${users_letter}?`);
-		} else {
-			state = STATE_NORMAL;
-		}
-	} else if (state === STATE_CONFIRMATION) {
 		state = STATE_NORMAL;
-		if (textLC === 'yes' || textLC === 'да' || textLC === 'конечно' || textLC === 'именно' || textLC === 'верно' || textLC === 'в яблочко' || textLC === 'sure' || textLC === 'exactly' || textLC === 'yeh' || textLC === 'yup')
-		{
-			return bot.telegram.sendMessage(chatId, 'Окей')
+		[users_grade, users_letter] = functions.valid_class(users_class);
+		if (users_grade === 'wrong number') {
+			return bot.telegram.sendMessage(chatId, 'Такого класса нет. Используйте команду /set_class чтобы попробовать ещё раз.')
+		} else if (users_letter === 'wrong letter') {
+			return bot.telegram.sendMessage(chatId, 'Класса с такой буквой нет. Используйте команду /set_class чтобы попробовать ещё раз.');
+		} else if (users_letter === null && users_grade === null) {
 		} else {
-			[users_grade, users_letter] = [null, null];
-			return bot.telegram.sendMessage(chatId, 'Хорошо. Используйте команду /set_class чтобы попробовать ещё.')
+			return bot.telegram.sendMessage(chatId, `Окей. ваш класс: ${users_grade}${users_letter}`);
 		}
 	}
 
