@@ -1,6 +1,5 @@
-package-lock.json
-package.json
 /node_modules
 security.js
 stickers.js
 /fake_json
+/.idea
