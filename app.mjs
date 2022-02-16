@@ -42,48 +42,54 @@ bot.on('message', async ctx => {
             (textLC.includes('урок') || textLC.includes('пара') || textLC.includes('звонок') || textLC.includes('перемена'))
         )
     ) {
-        let json = await readFileSync('./fake_json/licey.json');
-        json = await JSON.parse(json);
-        //current mode of learning(online/offline)
-        let current = "offline";
-        if (json.stuff.timetable.offline.period[0] === null && json.stuff.timetable.online.period[0] !== null)
-            current = "online"
-        else if (json.stuff.timetable.offline.period[0] === null && json.stuff.timetable.online.period[0] === null)
-            current = null;
-        if (current === undefined)
-            return bot.telegram.sendMessage(chatId, 'Извините, у нас нету актуального расписания.')
-        let periodStart =
-            moment(json.stuff.timetable[current].period[0], 'DD.MM.YYYY')
-                .unix();
-        let periodEnd;
-        if (json.stuff.timetable[current].period[1] === null)
-            periodEnd = null
-        else
-            periodEnd =
-                moment(json.stuff.timetable[current].period[1], 'DD.MM.YYYY')
-                    .unix();
-        let today =
-            moment(
-                `${moment().format('DD')}/${moment().format('MM')}/${moment().format('YYYY')}`,
-                'DD/MM/YYYY'
-            )
-                .unix();
-        //проверяем расписание на актуальность
-        // console.log('period: ' + [periodStart, periodEnd === null]);
-        // console.log('today: ' + today);
-        //todo: fill logic
-        if (periodEnd === null && today < periodStart) {
-                return bot.telegram.sendMessage(chatId, 'Извините, у нас имеется расписание, которое будет действовать только после ' + moment(json.stuff.timetable[current].period[0], 'DD.MM.YYYY').format('DD.MM.YYYY') + ' включительно.\nВы можете запросить его лишь кода оно будет актуально с помощью той же команды /when_school_bell')
-        } else if (
-            ( today >= periodStart && today <= periodEnd ) ||
-            ( today >= periodStart && periodEnd === null )
-        ) {
-            let bell = functions.when_school_bell(json.stuff.timetable[current].pares, moment().format('HH:mm'));
-            return bot.telegram.sendMessage(chatId, `Звонок прозвенит ${bell}`)
+        if (users_grade == null || users_letter == null) {
+            return bot.telegram.sendMessage(chatId, 'Для начала установите свой класс с помощью команды /set_class')
         } else {
-            //Приносим свои извинения.\nРасписание заполнял кто-то безграмотный.\nПостараемся это исправить в ближайшее время.
+            let json = await readFileSync('./fake_json/licey.json');
+            json = await JSON.parse(json);
+            const todayDay = moment().format('dddd').toLowerCase();
+            //current mode of learning(online/offline)
+            let current = "offline";
+            if (json.stuff.timetable.offline.period[0] === null && json.stuff.timetable.online.period[0] !== null)
+                current = "online"
+            else if (json.stuff.timetable.offline.period[0] === null && json.stuff.timetable.online.period[0] === null)
+                current = null;
+            if (current === undefined)
+                return bot.telegram.sendMessage(chatId, 'Извините, у нас нету актуального расписания.')
+            let periodStart =
+                moment(json.stuff.timetable[current].period[0], 'DD.MM.YYYY')
+                    .unix();
+            let periodEnd;
+            if (json.stuff.timetable[current].period[1] === null)
+                periodEnd = null
+            else
+                periodEnd =
+                    moment(json.stuff.timetable[current].period[1], 'DD.MM.YYYY')
+                        .unix();
+            let today =
+                moment(
+                    `${moment().format('DD')}/${moment().format('MM')}/${moment().format('YYYY')}`,
+                    'DD/MM/YYYY'
+                )
+                    .unix();
+            //проверяем расписание на актуальность
+            // console.log('period: ' + [periodStart, periodEnd === null]);
+            // console.log('today: ' + today);
+            if (periodEnd === null && today < periodStart) {
+                return bot.telegram.sendMessage(chatId, 'Извините, у нас имеется расписание, которое будет действовать только после ' + moment(json.stuff.timetable[current].period[0], 'DD.MM.YYYY').format('DD.MM.YYYY') + ' включительно.\nВы можете запросить его лишь кода оно будет актуально с помощью той же команды /when_school_bell')
+            } else if (
+                (today >= periodStart && today <= periodEnd) ||
+                (today >= periodStart && periodEnd === null)
+            ) {
+                let bell = functions.when_school_bell(
+                    json.stuff.timetable[current].pares,
+                    moment().format('HH:mm'),
+                    json["classes"][users_grade][users_letter]["lessons"][todayDay].length
+                );
+                return bot.telegram.sendMessage(chatId, bell)
+            } else
+                return bot.telegram.sendMessage(chatId, 'Приносим свои извинения.\nРасписание заполнено некоректно.\nПостараемся это исправить в ближайшее время.')
         }
-
     }
 
     if (state === STATE_CLASS) {
