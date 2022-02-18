@@ -52,22 +52,22 @@ function valid_class(clas) {
     }
 }
 
-function when_school_bell(pares, now, lessons=4) {
+function when_school_bell(timetable, now, lessons=4) {
     // now format: "09.42"
     // timetable format: [ ["08.30", "09.30"], [...], [...], [...] ]
-    pares.length = lessons;
+    timetable.length = lessons;
     const todayDay = moment().format('dddd').toLowerCase();
-    // если пара идет сейчас и сейчас будний
-    for (const i in pares) {
+    // если пара идет сейчас и сейчас рабочий
+    for (const i in timetable) {
         if (
             !['sunday', 'saturday'].includes(todayDay) &&
-            moment(now, 'H:m').unix() >= moment(pares[i][0], 'H:m').unix() &&
-            moment(now, 'H:m').unix() < moment(pares[i][1], 'H:m').unix()
+            moment(now, 'H:m').unix() >= moment(timetable[i][0], 'H:m').unix() &&
+            moment(now, 'H:m').unix() < moment(timetable[i][1], 'H:m').unix()
         ) {
-            let minTo = moment(pares[i][1], 'H:m').subtract(
+            let minTo = moment(timetable[i][1], 'H:m').subtract(
                 moment().format('m'), 'minutes'
             ).format('m');
-            let hoursTo = moment(pares[i][1], 'H:m').subtract({
+            let hoursTo = moment(timetable[i][1], 'H:m').subtract({
                 'hours': moment().format('H'),
                 'minutes': minTo
             }).format('H');
@@ -80,20 +80,20 @@ function when_school_bell(pares, now, lessons=4) {
     }
     // если уже уроки закончились
     if (
-        moment(now, 'H:m').unix() >= moment(pares[pares.length - 1][1], 'H:m').unix() ||
-        moment(now, 'H:m').unix() < moment(pares[0][0], 'H:m').unix() ||
+        moment(now, 'H:m').unix() >= moment(timetable[timetable.length - 1][1], 'H:m').unix() ||
+        moment(now, 'H:m').unix() < moment(timetable[0][0], 'H:m').unix() ||
         ['saturday', "sunday"].includes(todayDay)
     ) {
         let weekend = 1;
-        if (moment(now, 'H:m').unix() < moment(pares[0][0], 'H:m').unix() && !['saturday', 'sunday'].includes(todayDay))
+        if (moment(now, 'H:m').unix() < moment(timetable[0][0], 'H:m').unix() && !['saturday', 'sunday'].includes(todayDay))
             weekend = 0
         else if(todayDay === 'friday')
             weekend = 3
         else if(todayDay === 'saturday')
             weekend = 2
-        const hoursTo = moment(pares[0][0], 'H:m').add(weekend, 'days')
+        const hoursTo = moment(timetable[0][0], 'H:m').add(weekend, 'days')
             .diff(moment(now, 'H:m'), 'hours');
-        const minTo = moment(pares[0][0], 'H:m').add(weekend, 'days').subtract(hoursTo, 'hours')
+        const minTo = moment(timetable[0][0], 'H:m').add(weekend, 'days').subtract(hoursTo, 'hours')
             .diff(moment(now, 'H:m'), 'minutes');
 
         if(hoursTo == 0)
@@ -102,13 +102,13 @@ function when_school_bell(pares, now, lessons=4) {
             return `Первая пара начнётся через ${hoursTo}ч. ${minTo}мин`
     }
     // если сейчас перемена
-    for (let i = 1; i < pares.length; i++) {
+    for (let i = 1; i < timetable.length; i++) {
         if (
             !['sunday', 'saturday'].includes(todayDay) &&
-            moment(now, 'H:m').unix() >= moment(pares[i - 1][1], 'H:m').unix() &&
-            moment(now, 'H:m').unix() < moment(pares[i][0], 'H:m').unix()
+            moment(now, 'H:m').unix() >= moment(timetable[i - 1][1], 'H:m').unix() &&
+            moment(now, 'H:m').unix() < moment(timetable[i][0], 'H:m').unix()
         ) {
-            let rest = moment(pares[i][0], 'H:m').diff(moment(now, 'H:m'), 'seconds');
+            let rest = moment(timetable[i][0], 'H:m').diff(moment(now, 'H:m'), 'seconds');
             // Расчёт на то, что перемена не больше часа
             let minTo = moment(rest, 'X').format('m');
 
@@ -120,7 +120,7 @@ function when_school_bell(pares, now, lessons=4) {
 
 function current_lesson(pares, timetable, lessons) {
     timetable.length = lessons;
-    if( ['sunday', 'saturday'].includes(moment().format('dddd').toLowerCase()) )
+    if( pares === null )
         return 'Сегодня уроков нет.';
     let now = moment().format('HH:m');
     // если уже уроки закончились
@@ -153,7 +153,7 @@ function current_lesson(pares, timetable, lessons) {
 
 function next_lesson(pares, timetable, lessons) {
     timetable.length = lessons;
-    if( ['sunday', 'saturday'].includes(moment().format('dddd').toLowerCase()) )
+    if( pares === null )
         return 'Сегодня уроков нет.';
     let now = moment().format('HH:m');
     // если уже уроки закончились
