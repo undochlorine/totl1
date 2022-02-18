@@ -86,8 +86,9 @@ bot.on('message', async ctx => {
                 (today >= periodStart && periodEnd === null)
             ) {
                 let bell = functions.when_school_bell(
+                    json["classes"][users_grade][users_letter]["lessons"][todayDay],
+                    json["classes"][users_grade][users_letter]["lessons"],
                     json.stuff.timetable[current].pares,
-                    moment().format('HH:m'),
                     json["classes"][users_grade][users_letter]["lessons"][todayDay].length
                 );
                 return bot.telegram.sendMessage(chatId, bell)

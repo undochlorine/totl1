@@ -52,7 +52,8 @@ function valid_class(clas) {
     }
 }
 
-function when_school_bell(timetable, now, lessons=4) {
+function when_school_bell(pares, week, timetable, lessons=4) {
+    const now = moment().format('H:m');
     // now format: "09.42"
     // timetable format: [ ["08.30", "09.30"], [...], [...], [...] ]
     timetable.length = lessons;
@@ -60,7 +61,7 @@ function when_school_bell(timetable, now, lessons=4) {
     // если пара идет сейчас и сейчас рабочий
     for (const i in timetable) {
         if (
-            !['sunday', 'saturday'].includes(todayDay) &&
+            pares !== null &&
             moment(now, 'H:m').unix() >= moment(timetable[i][0], 'H:m').unix() &&
             moment(now, 'H:m').unix() < moment(timetable[i][1], 'H:m').unix()
         ) {
@@ -82,18 +83,36 @@ function when_school_bell(timetable, now, lessons=4) {
     if (
         moment(now, 'H:m').unix() >= moment(timetable[timetable.length - 1][1], 'H:m').unix() ||
         moment(now, 'H:m').unix() < moment(timetable[0][0], 'H:m').unix() ||
-        ['saturday', "sunday"].includes(todayDay)
+        pares === null
     ) {
-        let weekend = 1;
-        if (moment(now, 'H:m').unix() < moment(timetable[0][0], 'H:m').unix() && !['saturday', 'sunday'].includes(todayDay))
-            weekend = 0
-        else if(todayDay === 'friday')
-            weekend = 3
-        else if(todayDay === 'saturday')
-            weekend = 2
-        const hoursTo = moment(timetable[0][0], 'H:m').add(weekend, 'days')
+        let maxWeekend = 0;
+
+        let allPares = Object.values(week);
+        // let allDays = Object.keys(week);
+        let freeDays = []; // 1 - weekend, 0 - workday
+        for (let i in allPares) {
+            if(allPares[i] === null)
+                freeDays.push(1);
+            else
+                freeDays.push(0);
+        }
+        //множим freeDays
+        freeDays = (freeDays + ',' + freeDays).split(',')
+
+        if (moment(now, 'H:m').unix() < moment(timetable[0][0], 'H:m').unix() && pares !== null)
+            maxWeekend = 0
+        else {
+            for(let i = moment().format('d') - 1; i < freeDays.length; i++) {
+                if(freeDays[i] == 0 && i !== moment().format('d') - 1) {
+                    maxWeekend = i - ( moment().format('d') - 1 );
+                    break;
+                }
+            }
+        }
+
+        const hoursTo = moment(timetable[0][0], 'H:m').add(maxWeekend, 'days')
             .diff(moment(now, 'H:m'), 'hours');
-        const minTo = moment(timetable[0][0], 'H:m').add(weekend, 'days').subtract(hoursTo, 'hours')
+        const minTo = moment(timetable[0][0], 'H:m').add(maxWeekend, 'days').subtract(hoursTo, 'hours')
             .diff(moment(now, 'H:m'), 'minutes');
 
         if(hoursTo == 0)
@@ -104,7 +123,7 @@ function when_school_bell(timetable, now, lessons=4) {
     // если сейчас перемена
     for (let i = 1; i < timetable.length; i++) {
         if (
-            !['sunday', 'saturday'].includes(todayDay) &&
+            pares !== null,
             moment(now, 'H:m').unix() >= moment(timetable[i - 1][1], 'H:m').unix() &&
             moment(now, 'H:m').unix() < moment(timetable[i][0], 'H:m').unix()
         ) {
@@ -122,7 +141,7 @@ function current_lesson(pares, timetable, lessons) {
     timetable.length = lessons;
     if( pares === null )
         return 'Сегодня уроков нет.';
-    let now = moment().format('HH:m');
+    let now = moment().format('H:m');
     // если уже уроки закончились
     if (
         moment(now, 'H:m').unix() >= moment(timetable[timetable.length - 1][1], 'H:m').unix() ||
