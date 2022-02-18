@@ -105,11 +105,10 @@ bot.on('message', async ctx => {
             json = await JSON.parse(json);
             let todayDay = moment().format('dddd').toLowerCase()
             let timetable = json["classes"][users_grade][users_letter]["lessons"][todayDay];
-            timetable = timetable.map((el, index) => `${index + 1}. ${el}`)
             if (timetable == null)
                 return bot.telegram.sendMessage(chatId, 'Сегодня уроков нет.')
             else
-                return bot.telegram.sendMessage(chatId, `Расписание на сегодня:\n${timetable.join('\n')}`);
+                return bot.telegram.sendMessage(chatId, `Расписание на сегодня:\n${timetable.map((el, index) => `${index + 1}. ${el}`).join('\n')}`);
         }
     } else if (
         textLC === '/timetable_tomorrow' ||
@@ -122,11 +121,10 @@ bot.on('message', async ctx => {
             json = await JSON.parse(json);
             let tomorrowDay = moment().add(1, 'days').format('dddd').toLowerCase()
             let timetable = json["classes"][users_grade][users_letter]["lessons"][tomorrowDay];
-            timetable = timetable.map((el, index) => `${index + 1}. ${el}`)
             if (timetable == null)
                 return bot.telegram.sendMessage(chatId, 'Завтра уроков нет.')
             else
-                return bot.telegram.sendMessage(chatId, `Расписание на завтра:\n${timetable.join('\n')}`);
+                return bot.telegram.sendMessage(chatId, `Расписание на завтра:\n${timetable.map((el, index) => `${index + 1}. ${el}`).join('\n')}`);
         }
     } else if (
         textLC === '/current_lesson' ||

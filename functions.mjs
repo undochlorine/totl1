@@ -85,9 +85,9 @@ function when_school_bell(pares, now, lessons=4) {
         ['saturday', "sunday"].includes(todayDay)
     ) {
         let weekend = 1;
-        if (moment(now, 'H:m').unix() < moment(pares[0][0], 'H:m').unix())
-            weekend = 0;
-        if(todayDay === 'friday')
+        if (moment(now, 'H:m').unix() < moment(pares[0][0], 'H:m').unix() && !['saturday', 'sunday'].includes(todayDay))
+            weekend = 0
+        else if(todayDay === 'friday')
             weekend = 3
         else if(todayDay === 'saturday')
             weekend = 2
@@ -136,7 +136,7 @@ function current_lesson(pares, timetable, lessons) {
             moment(now, 'H:m').unix() >= moment(timetable[i - 1][1], 'H:m').unix() &&
             moment(now, 'H:m').unix() < moment(timetable[i][0], 'H:m').unix()
         ) {
-            return `Сейчас не идет урок.`
+            return `Сейчас перемена.`
         }
     }
     //если сейчас урок
@@ -148,7 +148,7 @@ function current_lesson(pares, timetable, lessons) {
             return `Сейчас ${(pares[i]).toLowerCase()}.`;
         }
     }
-        return 'Произошла ошибка.'
+    return 'Произошла ошибка.'
 }
 
 function next_lesson(pares, timetable, lessons) {
@@ -173,15 +173,15 @@ function next_lesson(pares, timetable, lessons) {
         }
     }
     //если сейчас урок
-    for (const i in pares) {
+    for (let i = 0; i < pares.length-1; i++) {
         if (
             moment(now, 'H:m').unix() >= moment(timetable[i][0], 'H:m').unix() &&
             moment(now, 'H:m').unix() < moment(timetable[i][1], 'H:m').unix()
         ) {
-            return `Следующая пара ${(pares[i+1]).toLowerCase()}.`;
+           return `Следующая пара ${ pares[i+1].toLowerCase()}.`;
         }
     }
-    return 'Произошла ошибка.'
+    return `Сейчас последняя пара.`
 }
 
 const obj = {
