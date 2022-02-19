@@ -85,11 +85,16 @@ bot.on('message', async ctx => {
                 (today >= periodStart && today <= periodEnd) ||
                 (today >= periodStart && periodEnd === null)
             ) {
+                let amountLessons;
+                if(json["classes"][users_grade][users_letter]["lessons"][todayDay] === null)
+                    amountLessons = 4
+                else
+                    amountLessons = json["classes"][users_grade][users_letter]["lessons"][todayDay].length
                 let bell = functions.when_school_bell(
                     json["classes"][users_grade][users_letter]["lessons"][todayDay],
                     json["classes"][users_grade][users_letter]["lessons"],
                     json.stuff.timetable[current].pares,
-                    json["classes"][users_grade][users_letter]["lessons"][todayDay].length
+                    amountLessons
                 );
                 return bot.telegram.sendMessage(chatId, bell)
             } else
@@ -164,18 +169,21 @@ bot.on('message', async ctx => {
                 )
                     .unix();
             //проверяем расписание на актуальность
-            // console.log('period: ' + [periodStart, periodEnd === null]);
-            // console.log('today: ' + today);
             if (periodEnd === null && today < periodStart) {
                 return bot.telegram.sendMessage(chatId, 'Извините, у нас имеется расписание, которое будет действовать только после ' + moment(json.stuff.timetable[current].period[0], 'DD.MM.YYYY').format('DD.MM.YYYY') + ' включительно.\nВы можете запросить его лишь кода оно будет актуально с помощью той же команды /when_school_bell')
             } else if (
                 (today >= periodStart && today <= periodEnd) ||
                 (today >= periodStart && periodEnd === null)
             ) {
+                let amountLessons;
+                if(json["classes"][users_grade][users_letter]["lessons"][todayDay] === null)
+                    amountLessons = 4
+                else
+                    amountLessons = json["classes"][users_grade][users_letter]["lessons"][todayDay].length
                 let current_lesson = functions.current_lesson(
                     lessons,
                     json["stuff"]["timetable"][current]["pares"],
-                    json["classes"][users_grade][users_letter]["lessons"][todayDay].length
+                    amountLessons
                 );
                 return bot.telegram.sendMessage(chatId, `${current_lesson}`);
             } else
@@ -227,10 +235,15 @@ bot.on('message', async ctx => {
                 (today >= periodStart && today <= periodEnd) ||
                 (today >= periodStart && periodEnd === null)
             ) {
+                let amountLessons;
+                if(json["classes"][users_grade][users_letter]["lessons"][todayDay] === null)
+                    amountLessons = 4
+                else
+                    amountLessons = json["classes"][users_grade][users_letter]["lessons"][todayDay].length
                 let current_lesson = functions.next_lesson(
                     lessons,
                     json["stuff"]["timetable"][current]["pares"],
-                    json["classes"][users_grade][users_letter]["lessons"][todayDay].length
+                    amountLessons
                 );
                 return bot.telegram.sendMessage(chatId, `${current_lesson}`);
             } else

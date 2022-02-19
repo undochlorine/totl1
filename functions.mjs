@@ -137,7 +137,7 @@ function when_school_bell(pares, week, timetable, lessons=4) {
     return 'Произошла ошибка.'
 }
 
-function current_lesson(pares, timetable, lessons) {
+function current_lesson(pares, timetable, lessons=4) {
     timetable.length = lessons;
     if( pares === null )
         return 'Сегодня уроков нет.';
@@ -170,7 +170,7 @@ function current_lesson(pares, timetable, lessons) {
     return 'Произошла ошибка.'
 }
 
-function next_lesson(pares, timetable, lessons) {
+function next_lesson(pares, timetable, lessons=4) {
     timetable.length = lessons;
     if( pares === null )
         return 'Сегодня уроков нет.';
