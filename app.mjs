@@ -1,12 +1,12 @@
-import security from './security.js';
 import {Telegraf} from 'telegraf';
 import functions from './functions.mjs';
 import moment from "moment";
 import {readFileSync} from "fs";
 
 const stickers = JSON.parse(readFileSync('./stickers.json'));
+const security = JSON.parse(readFileSync('./security.json'));
 
-const bot = new Telegraf(security.TELEGRAM_BOT_TOKEN);
+const bot = new Telegraf(security["TELEGRAM_BOT_TOKEN"]);
 
 const STATE_NORMAL = 'normal';
 const STATE_CLASS = 'waiting for a class';
