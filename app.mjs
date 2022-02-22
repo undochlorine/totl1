@@ -47,6 +47,7 @@ bot.on('message', async ctx => {
             (textLC.includes('урок') || textLC.includes('пара') || textLC.includes('звонок') || textLC.includes('перемена'))
         )
     ) {
+        state = STATE_NORMAL;
         if (users_grade == null || users_letter == null) {
             return bot.telegram.sendMessage(chatId, 'Для начала установите свой класс с помощью команды /set_class')
         } else {
@@ -105,6 +106,7 @@ bot.on('message', async ctx => {
         textLC === '/timetable_today' ||
         (textLC.includes('сегодня') && (textLC.includes('расписание') || textLC.includes('уроки') || textLC.includes('пары')))
     ) {
+        state = STATE_NORMAL;
         if (users_grade == null || users_letter == null) {
             return bot.telegram.sendMessage(chatId, 'Для начала установите свой класс с помощью команды /set_class')
         } else {
@@ -121,6 +123,7 @@ bot.on('message', async ctx => {
         textLC === '/timetable_tomorrow' ||
         (textLC.includes('завтра') && (textLC.includes('расписание') || textLC.includes('уроки') || textLC.includes('пары')))
     ) {
+        state = STATE_NORMAL;
         if (users_grade == null || users_letter == null) {
             return bot.telegram.sendMessage(chatId, 'Для начала установите свой класс с помощью команды /set_class')
         } else {
@@ -137,6 +140,7 @@ bot.on('message', async ctx => {
         textLC === '/current_lesson' ||
         (textLC.includes('сейчас') && (textLC.includes('пара') || textLC.includes('урок')))
     ) {
+        state = STATE_NORMAL;
         if (users_grade == null || users_letter == null) {
             return bot.telegram.sendMessage(chatId, 'Для начала установите свой класс с помощью команды /set_class')
         } else {
@@ -195,6 +199,7 @@ bot.on('message', async ctx => {
         ( textLC.includes('следующая') && textLC.includes('пара') ) ||
         ( textLC.includes('следующий') && textLC.includes('урок') )
     ) {
+        state = STATE_NORMAL;
         if (users_grade == null || users_letter == null) {
             return bot.telegram.sendMessage(chatId, 'Для начала установите свой класс с помощью команды /set_class')
         } else {
@@ -253,6 +258,7 @@ bot.on('message', async ctx => {
     } else if(
         textLC === '/events'
     ) {
+        state = STATE_NORMAL;
         let json = readFileSync('./fake_json/licey.json');
         json = await JSON.parse(json);
         let events = json["stuff"]["events"];
