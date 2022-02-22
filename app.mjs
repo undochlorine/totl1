@@ -25,7 +25,8 @@ bot.telegram.setMyCommands([
     {command: '/current_lesson', description: 'Какая сейчас пара?'},
     {command: '/next_lesson', description: 'Какая следующая пара?'},
     {command: '/timetable_today', description: 'Расписание на сегодня.'},
-    {command: '/timetable_tomorrow', description: 'Расписание на завтра.'}
+    {command: '/timetable_tomorrow', description: 'Расписание на завтра.'},
+    {command: '/events', description: 'Последние события в лицее и в мире.'}
 ]);
 
 bot.on('message', async ctx => {
@@ -249,6 +250,18 @@ bot.on('message', async ctx => {
             } else
                 return bot.telegram.sendMessage(chatId, 'Приносим свои извинения.\nРасписание заполнено некоректно.\nПостараемся это исправить в ближайшее время.')
         }
+    } else if(
+        textLC === '/events'
+    ) {
+        let json = readFileSync('./fake_json/licey.json');
+        json = await JSON.parse(json);
+        let events = json["stuff"]["events"];
+        await (async () => {
+            for (let i = 0; i < events.length; i++) {
+                await bot.telegram.sendMessage(chatId, events[i]);
+            }
+        })()
+        return 1;
     }
 
     if (state === STATE_CLASS) {
