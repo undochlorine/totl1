@@ -15,6 +15,22 @@ const WRONG_LETTER = 'wrong letter'
 
 let state = STATE_NORMAL;
 let users_class = null, users_letter = null, users_grade = null;
+let gpa;
+let wannaVariants;
+let marks = [];
+let marksMgsId;
+const marks_keys = {
+    reply_markup: {
+        inline_keyboard: [
+            [{text: '1', callback_data: 'mark1'}, {text: '2', callback_data: 'mark2'}],
+            [{text: '3', callback_data: 'mark3'}, {text: '4', callback_data: 'mark4'}, {
+                text: '5',
+                callback_data: 'mark5'
+            }]
+        ]
+    }
+};
+const markNeed = 0.60;
 users_grade = "9";
 users_letter = 'в';
 
@@ -26,6 +42,7 @@ bot.telegram.setMyCommands([
     {command: '/next_lesson', description: 'Какая следующая пара?'},
     {command: '/timetable_today', description: 'Расписание на сегодня.'},
     {command: '/timetable_tomorrow', description: 'Расписание на завтра.'},
+    {command: '/count_marks', description: 'Узнать средний бал.'},
     {command: '/events', description: 'Последние события в лицее и в мире.'}
 ]);
 
@@ -88,7 +105,7 @@ bot.on('message', async ctx => {
                 (today >= periodStart && periodEnd === null)
             ) {
                 let amountLessons;
-                if(json["classes"][users_grade][users_letter]["lessons"][todayDay] === null)
+                if (json["classes"][users_grade][users_letter]["lessons"][todayDay] === null)
                     amountLessons = 4
                 else
                     amountLessons = json["classes"][users_grade][users_letter]["lessons"][todayDay].length
@@ -181,7 +198,7 @@ bot.on('message', async ctx => {
                 (today >= periodStart && periodEnd === null)
             ) {
                 let amountLessons;
-                if(json["classes"][users_grade][users_letter]["lessons"][todayDay] === null)
+                if (json["classes"][users_grade][users_letter]["lessons"][todayDay] === null)
                     amountLessons = 4
                 else
                     amountLessons = json["classes"][users_grade][users_letter]["lessons"][todayDay].length
@@ -196,8 +213,8 @@ bot.on('message', async ctx => {
         }
     } else if (
         textLC === '/next_lesson' ||
-        ( textLC.includes('следующая') && textLC.includes('пара') ) ||
-        ( textLC.includes('следующий') && textLC.includes('урок') )
+        (textLC.includes('следующая') && textLC.includes('пара')) ||
+        (textLC.includes('следующий') && textLC.includes('урок'))
     ) {
         state = STATE_NORMAL;
         if (users_grade == null || users_letter == null) {
@@ -242,7 +259,7 @@ bot.on('message', async ctx => {
                 (today >= periodStart && periodEnd === null)
             ) {
                 let amountLessons;
-                if(json["classes"][users_grade][users_letter]["lessons"][todayDay] === null)
+                if (json["classes"][users_grade][users_letter]["lessons"][todayDay] === null)
                     amountLessons = 4
                 else
                     amountLessons = json["classes"][users_grade][users_letter]["lessons"][todayDay].length
@@ -255,7 +272,13 @@ bot.on('message', async ctx => {
             } else
                 return bot.telegram.sendMessage(chatId, 'Приносим свои извинения.\nРасписание заполнено некоректно.\nПостараемся это исправить в ближайшее время.')
         }
-    } else if(
+    } else if (
+        textLC === '/count_marks'
+    ) {
+        state = STATE_NORMAL;
+        marks = [];
+        return bot.telegram.sendMessage(chatId, 'Введите свои оценки по определённому предмету:', marks_keys)
+    } else if (
         textLC === '/events'
     ) {
         state = STATE_NORMAL;
@@ -286,6 +309,113 @@ bot.on('message', async ctx => {
     }
 
     return bot.telegram.sendMessage(chatId, `Я вас не понимаю.`);
+});
+
+bot.on('callback_query', async msg => {
+    const chatId = msg.chat.id;
+    const data = msg.callbackQuery.data;
+
+    // если ввел оценку - добавляем в массив
+    if (['mark1', 'mark2', 'mark3', 'mark4', 'mark5'].includes(data)) {
+        //добавляем оценку
+        marks.push(Number(data.charAt(data.length - 1)));
+
+        let sum = marks.reduce((acc, next) => acc + next);
+        gpa = (sum / marks.length).toFixed(2);
+        let wannaUpBtn = {
+            reply_markup: {
+                inline_keyboard: [
+                    [{text: 'Не устраивает', callback_data: 'wanna_up'}]
+                ]
+            }
+        };
+        // если средний бал выше 4.60 то некуда уже подниматься
+        if(gpa >= (4 + markNeed))
+            wannaUpBtn = {};
+
+        //если это превая вводимая оценка - просто выводим ее
+        if (marks[1] === undefined) {
+            await bot.telegram.sendMessage(
+                chatId,
+                `Ваши оценки: ${marks.join(', ')}\nВаш средний бал: ${gpa}`,
+                wannaUpBtn
+                )
+                .then((msgInfo) => {
+                    marksMgsId = msgInfo.message_id
+                })
+        }
+        // либо редактируем уже имеющееся сообщение
+        else
+            await bot.telegram.editMessageText(
+                chatId,
+                marksMgsId,
+                null,
+                `Ваши оценки: ${marks.join(', ')}\nВаш средний бал: ${gpa}`,
+                wannaUpBtn
+            )
+    } else if (data === 'wanna_up') {
+        //если нажал на кнопку "не устраивает"
+        let min;
+        //если оценка 3.22 -> предлагаем 4, 5
+        //если оценка 3.79 -> предлагаем 5 потому что у него уже есть 4ка
+        if (Math.floor(gpa) === Math.floor(gpa - markNeed))
+            min = Math.floor(gpa) + 2
+        else
+            min = Math.floor(gpa) + 1;
+        wannaVariants = [];
+        for (let i = min; i <= 5; i++) {
+            wannaVariants.push(i);
+        }
+        let wannaButtons = wannaVariants.map(el => ({text: el, callback_data: `wanna_${el}`}));
+        await bot.telegram.sendMessage(chatId, 'Какую оценку вы хотите иметь?', {
+            reply_markup: {
+                inline_keyboard: [
+                    wannaButtons
+                ]
+            }
+        })
+    } else if (data.includes('wanna_')) {
+        //если выбрал какую оценку хочет к примеру 4
+        const chosenMark = data.charAt(data.length - 1);
+        //chosenMark = 4
+        const wannaValue = chosenMark - (1 - markNeed);
+        //wannaValue = 3,60
+        let min;
+        if (Math.floor(gpa) === Math.floor(gpa - markNeed))
+            min = Math.floor(gpa) + 2
+        else
+            min = Math.floor(gpa) + 1;
+        let need = {};
+        //пробуем все оценки которые ему могут помочь
+        for(let i = min; i <= 5; i++) {
+            //не портим массив marks
+            let localMarks = [...marks];
+            let needQ = 0;
+            //если хотим 4, а i = 3, то не поможем, значит итерируемся дальше
+            if(i < wannaValue)
+                continue;
+            //пока не поможем
+            while (true) {
+                needQ++;
+                localMarks.push(i);
+                if( (localMarks.reduce((acc, next) => acc+next) / localMarks.length) >= wannaValue)
+                    break;
+            }
+            //заполняем объект структорой {5: 19}, где нужно 19 пятёрок
+            need[`${i}`] = needQ;
+        }
+        //делаем из объекта готовуюб строку
+        let needStr = ``;
+        for (let i = 0; i < Object.keys(need).length; i++) {
+            if(i === 0)
+                needStr += `${Object.values(need)[i]} "${Object.keys(need)[i]}"`
+            else
+                needStr += ` или ${Object.values(need)[i]} "${Object.keys(need)[i]}"`;
+        }
+        await bot.telegram.sendMessage(chatId, `Для этого вам нужно получить ${needStr}`)
+    }
+
+    return 1;
 });
 
 bot.launch();
