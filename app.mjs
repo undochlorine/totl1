@@ -96,7 +96,7 @@ bot.on('message', async ctx => {
         if (users_grade == null || users_letter == null) {
             return bot.telegram.sendMessage(chatId, 'Для начала установите свой класс с помощью команды /set_class')
         } else {
-            let json = await readFileSync('./fake_json/licey.json');
+            let json = await readFileSync('./fake_json/lyceum.json');
             json = await JSON.parse(json);
             const todayDay = moment().format('dddd').toLowerCase();
             //current mode of learning(online/offline)
@@ -168,7 +168,7 @@ bot.on('message', async ctx => {
         if (users_grade == null || users_letter == null) {
             return bot.telegram.sendMessage(chatId, 'Для начала установите свой класс с помощью команды /set_class')
         } else {
-            let json = await readFileSync('./fake_json/licey.json');
+            let json = await readFileSync('./fake_json/lyceum.json');
             json = await JSON.parse(json);
             let todayDay = moment().format('dddd').toLowerCase()
             let timetable = json["classes"][users_grade][users_letter]["lessons"][todayDay];
@@ -184,7 +184,7 @@ bot.on('message', async ctx => {
         if (users_grade == null || users_letter == null) {
             return bot.telegram.sendMessage(chatId, 'Для начала установите свой класс с помощью команды /set_class')
         } else {
-            let json = await readFileSync('./fake_json/licey.json');
+            let json = await readFileSync('./fake_json/lyceum.json');
             json = await JSON.parse(json);
             let tomorrowDay = moment().add(1, 'days').format('dddd').toLowerCase()
             let timetable = json["classes"][users_grade][users_letter]["lessons"][tomorrowDay];
@@ -200,7 +200,7 @@ bot.on('message', async ctx => {
         if (users_grade == null || users_letter == null) {
             return bot.telegram.sendMessage(chatId, 'Для начала установите свой класс с помощью команды /set_class')
         } else {
-            let json = await readFileSync('./fake_json/licey.json');
+            let json = await readFileSync('./fake_json/lyceum.json');
             json = await JSON.parse(json);
             let lessons = json["classes"][users_grade][users_letter]["lessons"][moment().format('dddd').toLowerCase()];
 
@@ -274,7 +274,7 @@ bot.on('message', async ctx => {
         if (users_grade == null || users_letter == null) {
             return bot.telegram.sendMessage(chatId, 'Для начала установите свой класс с помощью команды /set_class')
         } else {
-            let json = await readFileSync('./fake_json/licey.json');
+            let json = await readFileSync('./fake_json/lyceum.json');
             json = await JSON.parse(json);
             let lessons = json["classes"][users_grade][users_letter]["lessons"][moment().format('dddd').toLowerCase()];
 
@@ -348,7 +348,7 @@ bot.on('message', async ctx => {
     } else if (
         textLC === '/events'
     ) {
-        let json = readFileSync('./fake_json/licey.json');
+        let json = readFileSync('./fake_json/lyceum.json');
         json = await JSON.parse(json);
         let events = json["stuff"]["events"];
         await (async () => {
@@ -477,7 +477,7 @@ bot.on('callback_query', async msg => {
         )
     } else if (data.includes('class_letter_')) {
         users_letter = data.charAt(data.length - 1).toLowerCase();
-        bot.telegram.sendMessage(chatId, `Ваш класс: ${users_grade}-${users_letter.toUpperCase()}`)
+        return bot.telegram.sendMessage(chatId, `Ваш класс: ${users_grade}-${users_letter.toUpperCase()}`)
     }
 
     return 1;
