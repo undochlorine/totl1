@@ -8,13 +8,7 @@ const security = JSON.parse(readFileSync('./security.json'));
 
 const bot = new Telegraf(security["TELEGRAM_BOT_TOKEN"]);
 
-const STATE_NORMAL = 'normal';
-const STATE_CLASS = 'waiting for a class';
-const WRONG_NUMBER = 'wrong number';
-const WRONG_LETTER = 'wrong letter'
-
-let state = STATE_NORMAL;
-let users_class = null, users_letter = null, users_grade = null;
+let users_letter = 'в', users_grade = '9';
 let gpa;
 let wannaVariants;
 let marks = [];
@@ -22,21 +16,51 @@ let marksMgsId;
 const marks_keys = {
     reply_markup: {
         inline_keyboard: [
-            [{text: '1', callback_data: 'mark1'}, {text: '2', callback_data: 'mark2'}],
-            [{text: '3', callback_data: 'mark3'}, {text: '4', callback_data: 'mark4'}, {
-                text: '5',
-                callback_data: 'mark5'
-            }]
+            [
+                {text: '1', callback_data: 'mark1'},
+                {text: '2', callback_data: 'mark2'}
+            ],
+            [
+                {text: '3', callback_data: 'mark3'},
+                {text: '4', callback_data: 'mark4'},
+                {text: '5', callback_data: 'mark5'}
+            ]
         ]
     }
 };
 const markNeed = 0.60;
-users_grade = "9";
-users_letter = 'в';
+const class_letter_keys = {
+    reply_markup: {
+        inline_keyboard: [
+            [
+                {text: 'А', callback_data: 'class_letter_А'},
+                {text: 'Б', callback_data: 'class_letter_Б'},
+                {text: 'В', callback_data: 'class_letter_В'}
+            ],
+            [
+                {text: 'Г', callback_data: 'class_letter_Г'},
+                {text: 'Д', callback_data: 'class_letter_Д'},
+                {text: 'Е', callback_data: 'class_letter_Е'}
+            ]
+        ]
+    }
+}
+const class_grade_keys = {
+    reply_markup: {
+        inline_keyboard: [
+            [
+                {text: '8', callback_data: 'class_grade_8'},
+                {text: '9', callback_data: 'class_grade_9'},
+                {text: '10', callback_data: 'class_grade_10'},
+                {text: '11', callback_data: 'class_grade_11'}
+            ]
+        ]
+    }
+}
 
 bot.telegram.setMyCommands([
     {command: '/start', description: 'Начать общение с ботом.'},
-    {command: '/set_class', description: 'Установить класс. Обязательная функция для пользования ботом.'},
+    {command: '/set_class', description: 'Установить класс.'},
     {command: '/when_school_bell', description: 'Когда звонок?'},
     {command: '/current_lesson', description: 'Какая сейчас пара?'},
     {command: '/next_lesson', description: 'Какая следующая пара?'},
@@ -48,23 +72,27 @@ bot.telegram.setMyCommands([
 
 bot.on('message', async ctx => {
     const text = ctx.message.text;
-    const textLC = text.toLowerCase(); // textLC - text in lower case
+    const textLC = text.toLowerCase(); // textLC - message text in lower case
     const from = ctx.from;
     const chatId = ctx.chat.id;
     if (textLC === '/start') {
-        await bot.telegram.sendMessage(chatId, `Привет, ${from.first_name}! В каком вы классе?`);
-        state = STATE_CLASS;
-        return 0;
+        return bot.telegram.sendMessage(
+            chatId,
+            `Привет, ${from.first_name}! В каком вы классе?`,
+            class_grade_keys
+        );
     } else if (textLC === '/set_class') {
-        state = STATE_CLASS;
-        return bot.telegram.sendMessage(chatId, `В каком вы классе?`);
+        return bot.telegram.sendMessage(
+            chatId,
+            `В каком вы классе?`,
+            class_grade_keys
+        );
     } else if (
         textLC === '/when_school_bell' ||
         (textLC.includes('когда') &&
             (textLC.includes('урок') || textLC.includes('пара') || textLC.includes('звонок') || textLC.includes('перемена'))
         )
     ) {
-        state = STATE_NORMAL;
         if (users_grade == null || users_letter == null) {
             return bot.telegram.sendMessage(chatId, 'Для начала установите свой класс с помощью команды /set_class')
         } else {
@@ -73,36 +101,50 @@ bot.on('message', async ctx => {
             const todayDay = moment().format('dddd').toLowerCase();
             //current mode of learning(online/offline)
             let current = "offline";
-            if (json["stuff"]["timetable"]["offline"]["period"][0] === null && json["stuff"]["timetable"]["online"]["period"][0] !== null)
-                current = "online"
-            else if (json["stuff"]["timetable"]["offline"]["period"][0] === null && json["stuff"]["timetable"]["online"]["period"][0] === null)
-                current = null;
-            if (current === undefined)
-                return bot.telegram.sendMessage(chatId, 'Извините, у нас нету актуального расписания.')
-            let periodStart =
-                moment(json["stuff"]["timetable"][current]["period"][0], 'DD.MM.YYYY')
-                    .unix();
-            let periodEnd;
-            if (json["stuff"]["timetable"][current]["period"][1] === null)
-                periodEnd = null
-            else
-                periodEnd =
-                    moment(json["stuff"]["timetable"][current]["period"][1], 'DD.MM.YYYY')
-                        .unix();
-            let today =
-                moment(
-                    `${moment().format('DD')}/${moment().format('MM')}/${moment().format('YYYY')}`,
-                    'DD/MM/YYYY'
-                )
-                    .unix();
+            if(json["stuff"]["timetable"][current]["period"][0] === null && json["stuff"]["timetable"][current]["period"][1] === null)
+                current = "online";
+            if(json["stuff"]["timetable"]["online"]["period"][0] === null && json["stuff"]["timetable"]["online"]["period"][1] === null)
+                current = undefined;
+
+            if (!current)
+                return bot.telegram.sendMessage(chatId, 'Извините, у нас нету актуального расписания.');
+
+            let periodStart = moment(json["stuff"]["timetable"][current]["period"][0], 'DD.MM.YYYY')
+                .unix();
+            let periodEnd = moment(json["stuff"]["timetable"][current]["period"][1], 'DD.MM.YYYY')
+                .unix();
+            let today = moment(
+                `${moment().format('DD')}/${moment().format('MM')}/${moment().format('YYYY')}`,
+                'DD/MM/YYYY'
+            ).unix();
             //проверяем расписание на актуальность
             // console.log('period: ' + [periodStart, periodEnd === null]);
             // console.log('today: ' + today);
-            if (periodEnd === null && today < periodStart) {
-                return bot.telegram.sendMessage(chatId, 'Извините, у нас имеется расписание, которое будет действовать только после ' + moment(json["stuff"]["timetable"][current]["period"][0], 'DD.MM.YYYY').format('DD.MM.YYYY') + ' включительно.\nВы можете запросить его лишь кода оно будет актуально с помощью той же команды /when_school_bell')
-            } else if (
-                (today >= periodStart && today <= periodEnd) ||
-                (today >= periodStart && periodEnd === null)
+
+            if(
+                (periodStart == null && periodEnd != null && today > periodEnd) ||
+                (periodStart != null && periodEnd != null && !(today > periodStart && today < periodEnd) ) ||
+                (periodEnd == null && periodStart != null && today < periodStart)
+            ) {
+                if(current === "offline")
+                    current = "online"
+                else
+                    current = "offline";
+                periodStart = moment(json["stuff"]["timetable"][current]["period"][0], 'DD.MM.YYYY')
+                    .unix();
+                periodEnd = moment(json["stuff"]["timetable"][current]["period"][1], 'DD.MM.YYYY')
+                    .unix();
+            }
+
+            if(
+                (periodEnd != null && today > periodEnd) ||
+                (periodStart != null && today < periodStart)
+            )
+                return bot.telegram.sendMessage(chatId, 'У нас отсутствует акуальное расписание, попробуйте позже.')
+            else if(
+                (periodEnd != null && today <= periodEnd && periodStart == null) ||
+                (periodStart != null && periodEnd != null && today >= periodStart && today <= periodEnd) ||
+                (periodStart != null && today >= periodStart && periodEnd == null)
             ) {
                 let amountLessons;
                 if (json["classes"][users_grade][users_letter]["lessons"][todayDay] === null)
@@ -123,7 +165,6 @@ bot.on('message', async ctx => {
         textLC === '/timetable_today' ||
         (textLC.includes('сегодня') && (textLC.includes('расписание') || textLC.includes('уроки') || textLC.includes('пары')))
     ) {
-        state = STATE_NORMAL;
         if (users_grade == null || users_letter == null) {
             return bot.telegram.sendMessage(chatId, 'Для начала установите свой класс с помощью команды /set_class')
         } else {
@@ -140,7 +181,6 @@ bot.on('message', async ctx => {
         textLC === '/timetable_tomorrow' ||
         (textLC.includes('завтра') && (textLC.includes('расписание') || textLC.includes('уроки') || textLC.includes('пары')))
     ) {
-        state = STATE_NORMAL;
         if (users_grade == null || users_letter == null) {
             return bot.telegram.sendMessage(chatId, 'Для начала установите свой класс с помощью команды /set_class')
         } else {
@@ -157,45 +197,60 @@ bot.on('message', async ctx => {
         textLC === '/current_lesson' ||
         (textLC.includes('сейчас') && (textLC.includes('пара') || textLC.includes('урок')))
     ) {
-        state = STATE_NORMAL;
         if (users_grade == null || users_letter == null) {
             return bot.telegram.sendMessage(chatId, 'Для начала установите свой класс с помощью команды /set_class')
         } else {
-            let json = readFileSync('./fake_json/licey.json');
-            json = JSON.parse(json);
+            let json = await readFileSync('./fake_json/licey.json');
+            json = await JSON.parse(json);
             let lessons = json["classes"][users_grade][users_letter]["lessons"][moment().format('dddd').toLowerCase()];
 
             const todayDay = moment().format('dddd').toLowerCase();
             //current mode of learning(online/offline)
             let current = "offline";
-            if (json["stuff"]["timetable"]["offline"]["period"][0] === null && json["stuff"]["timetable"]["online"]["period"][0] !== null)
-                current = "online"
-            else if (json["stuff"]["timetable"]["offline"]["period"][0] === null && json["stuff"]["timetable"]["online"]["period"][0] === null)
-                current = null;
-            if (current === undefined)
-                return bot.telegram.sendMessage(chatId, 'Извините, у нас нету актуального расписания.')
-            let periodStart =
-                moment(json["stuff"]["timetable"][current]["period"][0], 'DD.MM.YYYY')
-                    .unix();
-            let periodEnd;
-            if (json["stuff"]["timetable"][current]["period"][1] === null)
-                periodEnd = null
-            else
-                periodEnd =
-                    moment(json["stuff"]["timetable"][current]["period"][1], 'DD.MM.YYYY')
-                        .unix();
-            let today =
-                moment(
-                    `${moment().format('DD')}/${moment().format('MM')}/${moment().format('YYYY')}`,
-                    'DD/MM/YYYY'
-                )
-                    .unix();
+            if(json["stuff"]["timetable"][current]["period"][0] === null && json["stuff"]["timetable"][current]["period"][1] === null)
+                current = "online";
+            if(json["stuff"]["timetable"]["online"]["period"][0] === null && json["stuff"]["timetable"]["online"]["period"][1] === null)
+                current = undefined;
+
+            if (!current)
+                return bot.telegram.sendMessage(chatId, 'Извините, у нас нету актуального расписания.');
+
+            let periodStart = moment(json["stuff"]["timetable"][current]["period"][0], 'DD.MM.YYYY')
+                .unix();
+            let periodEnd = moment(json["stuff"]["timetable"][current]["period"][1], 'DD.MM.YYYY')
+                .unix();
+            let today = moment(
+                `${moment().format('DD')}/${moment().format('MM')}/${moment().format('YYYY')}`,
+                'DD/MM/YYYY'
+            ).unix();
             //проверяем расписание на актуальность
-            if (periodEnd === null && today < periodStart) {
-                return bot.telegram.sendMessage(chatId, 'Извините, у нас имеется расписание, которое будет действовать только после ' + moment(json["stuff"]["timetable"][current]["period"][0], 'DD.MM.YYYY').format('DD.MM.YYYY') + ' включительно.\nВы можете запросить его лишь кода оно будет актуально с помощью той же команды /when_school_bell')
-            } else if (
-                (today >= periodStart && today <= periodEnd) ||
-                (today >= periodStart && periodEnd === null)
+            // console.log('period: ' + [periodStart, periodEnd === null]);
+            // console.log('today: ' + today);
+
+            if(
+                (periodStart == null && periodEnd != null && today > periodEnd) ||
+                (periodStart != null && periodEnd != null && !(today > periodStart && today < periodEnd) ) ||
+                (periodEnd == null && periodStart != null && today < periodStart)
+            ) {
+                if(current === "offline")
+                    current = "online"
+                else
+                    current = "offline";
+                periodStart = moment(json["stuff"]["timetable"][current]["period"][0], 'DD.MM.YYYY')
+                    .unix();
+                periodEnd = moment(json["stuff"]["timetable"][current]["period"][1], 'DD.MM.YYYY')
+                    .unix();
+            }
+
+            if(
+                (periodEnd != null && today > periodEnd) ||
+                (periodStart != null && today < periodStart)
+            )
+                return bot.telegram.sendMessage(chatId, 'У нас отсутствует акуальное расписание, попробуйте позже.')
+            else if(
+                (periodEnd != null && today <= periodEnd && periodStart == null) ||
+                (periodStart != null && periodEnd != null && today >= periodStart && today <= periodEnd) ||
+                (periodStart != null && today >= periodStart && periodEnd == null)
             ) {
                 let amountLessons;
                 if (json["classes"][users_grade][users_letter]["lessons"][todayDay] === null)
@@ -216,47 +271,60 @@ bot.on('message', async ctx => {
         (textLC.includes('следующая') && textLC.includes('пара')) ||
         (textLC.includes('следующий') && textLC.includes('урок'))
     ) {
-        state = STATE_NORMAL;
         if (users_grade == null || users_letter == null) {
             return bot.telegram.sendMessage(chatId, 'Для начала установите свой класс с помощью команды /set_class')
         } else {
-            let json = readFileSync('./fake_json/licey.json');
-            json = JSON.parse(json);
+            let json = await readFileSync('./fake_json/licey.json');
+            json = await JSON.parse(json);
             let lessons = json["classes"][users_grade][users_letter]["lessons"][moment().format('dddd').toLowerCase()];
 
             const todayDay = moment().format('dddd').toLowerCase();
             //current mode of learning(online/offline)
             let current = "offline";
-            if (json["stuff"]["timetable"]["offline"]["period"][0] === null && json["stuff"]["timetable"]["online"]["period"][0] !== null)
-                current = "online"
-            else if (json["stuff"]["timetable"]["offline"]["period"][0] === null && json["stuff"]["timetable"]["online"]["period"][0] === null)
-                current = null;
-            if (current === undefined)
-                return bot.telegram.sendMessage(chatId, 'Извините, у нас нету актуального расписания.')
-            let periodStart =
-                moment(json["stuff"]["timetable"][current]["period"][0], 'DD.MM.YYYY')
-                    .unix();
-            let periodEnd;
-            if (json["stuff"]["timetable"][current]["period"][1] === null)
-                periodEnd = null
-            else
-                periodEnd =
-                    moment(json["stuff"]["timetable"][current]["period"][1], 'DD.MM.YYYY')
-                        .unix();
-            let today =
-                moment(
-                    `${moment().format('DD')}/${moment().format('MM')}/${moment().format('YYYY')}`,
-                    'DD/MM/YYYY'
-                )
-                    .unix();
+            if(json["stuff"]["timetable"][current]["period"][0] === null && json["stuff"]["timetable"][current]["period"][1] === null)
+                current = "online";
+            if(json["stuff"]["timetable"]["online"]["period"][0] === null && json["stuff"]["timetable"]["online"]["period"][1] === null)
+                current = undefined;
+
+            if (!current)
+                return bot.telegram.sendMessage(chatId, 'Извините, у нас нету актуального расписания.');
+
+            let periodStart = moment(json["stuff"]["timetable"][current]["period"][0], 'DD.MM.YYYY')
+                .unix();
+            let periodEnd = moment(json["stuff"]["timetable"][current]["period"][1], 'DD.MM.YYYY')
+                .unix();
+            let today = moment(
+                `${moment().format('DD')}/${moment().format('MM')}/${moment().format('YYYY')}`,
+                'DD/MM/YYYY'
+            ).unix();
             //проверяем расписание на актуальность
             // console.log('period: ' + [periodStart, periodEnd === null]);
             // console.log('today: ' + today);
-            if (periodEnd === null && today < periodStart) {
-                return bot.telegram.sendMessage(chatId, 'Извините, у нас имеется расписание, которое будет действовать только после ' + moment(json["stuff"]["timetable"][current]["period"][0], 'DD.MM.YYYY').format('DD.MM.YYYY') + ' включительно.\nВы можете запросить его лишь кода оно будет актуально с помощью той же команды /when_school_bell')
-            } else if (
-                (today >= periodStart && today <= periodEnd) ||
-                (today >= periodStart && periodEnd === null)
+
+            if(
+                (periodStart == null && periodEnd != null && today > periodEnd) ||
+                (periodStart != null && periodEnd != null && !(today > periodStart && today < periodEnd) ) ||
+                (periodEnd == null && periodStart != null && today < periodStart)
+            ) {
+                if(current === "offline")
+                    current = "online"
+                else
+                    current = "offline";
+                periodStart = moment(json["stuff"]["timetable"][current]["period"][0], 'DD.MM.YYYY')
+                    .unix();
+                periodEnd = moment(json["stuff"]["timetable"][current]["period"][1], 'DD.MM.YYYY')
+                    .unix();
+            }
+
+            if(
+                (periodEnd != null && today > periodEnd) ||
+                (periodStart != null && today < periodStart)
+            )
+                return bot.telegram.sendMessage(chatId, 'У нас отсутствует акуальное расписание, попробуйте позже.')
+            else if(
+                (periodEnd != null && today <= periodEnd && periodStart == null) ||
+                (periodStart != null && periodEnd != null && today >= periodStart && today <= periodEnd) ||
+                (periodStart != null && today >= periodStart && periodEnd == null)
             ) {
                 let amountLessons;
                 if (json["classes"][users_grade][users_letter]["lessons"][todayDay] === null)
@@ -275,13 +343,11 @@ bot.on('message', async ctx => {
     } else if (
         textLC === '/count_marks'
     ) {
-        state = STATE_NORMAL;
         marks = [];
         return bot.telegram.sendMessage(chatId, 'Введите свои оценки по определённому предмету:', marks_keys)
     } else if (
         textLC === '/events'
     ) {
-        state = STATE_NORMAL;
         let json = readFileSync('./fake_json/licey.json');
         json = await JSON.parse(json);
         let events = json["stuff"]["events"];
@@ -291,21 +357,6 @@ bot.on('message', async ctx => {
             }
         })()
         return 1;
-    }
-
-    if (state === STATE_CLASS) {
-        users_class = textLC;
-        state = STATE_NORMAL;
-        [users_grade, users_letter] = functions.valid_class(users_class);
-        if (users_grade === WRONG_NUMBER) {
-            return bot.telegram.sendMessage(chatId, 'Такого класса нет. Используйте команду /set_class чтобы попробовать ещё раз.')
-        } else if (users_letter === WRONG_LETTER) {
-            return bot.telegram.sendMessage(chatId, 'Класса с такой буквой нет. Используйте команду /set_class чтобы попробовать ещё раз.');
-        } else if (users_letter === null && users_grade === null) {
-            return bot.telegram.sendMessage(chatId, `Вы ввели класс некоректно, повторите попытку, использую команду /set_class`);
-        } else {
-            return bot.telegram.sendMessage(chatId, `Окей. ваш класс: ${users_grade}-${users_letter}`);
-        }
     }
 
     return bot.telegram.sendMessage(chatId, `Я вас не понимаю.`);
@@ -330,7 +381,7 @@ bot.on('callback_query', async msg => {
             }
         };
         // если средний бал выше 4.60 то некуда уже подниматься
-        if(gpa >= (4 + markNeed))
+        if (gpa >= (4 + markNeed))
             wannaUpBtn = {};
 
         //если это первая вводимая оценка - просто выводим ее
@@ -339,7 +390,7 @@ bot.on('callback_query', async msg => {
                 chatId,
                 `Ваши оценки: ${marks.join(', ')}\nВаш средний бал: ${gpa}`,
                 wannaUpBtn
-                )
+            )
                 .then((msgInfo) => {
                     marksMgsId = msgInfo.message_id
                 })
@@ -387,18 +438,18 @@ bot.on('callback_query', async msg => {
             min = Math.floor(gpa) + 1;
         let need = {};
         //пробуем все оценки которые ему могут помочь
-        for(let i = min; i <= 5; i++) {
+        for (let i = min; i <= 5; i++) {
             //не портим массив marks
             let localMarks = [...marks];
             let needQ = 0;
             //если хотим 4, а i = 3, то не поможем, значит итерируемся дальше
-            if(i < wannaValue)
+            if (i < wannaValue)
                 continue;
             //пока не поможем
             while (true) {
                 needQ++;
                 localMarks.push(i);
-                if( (localMarks.reduce((acc, next) => acc+next) / localMarks.length) >= wannaValue)
+                if ((localMarks.reduce((acc, next) => acc + next) / localMarks.length) >= wannaValue)
                     break;
             }
             //заполняем объект структорой {5: 19}, где нужно 19 пятёрок
@@ -407,12 +458,26 @@ bot.on('callback_query', async msg => {
         //делаем из объекта готовую строку
         let needStr = ``;
         for (let i = 0; i < Object.keys(need).length; i++) {
-            if(i === 0)
+            if (i === 0)
                 needStr += `${Object.values(need)[i]} "${Object.keys(need)[i]}"`
             else
                 needStr += ` или ${Object.values(need)[i]} "${Object.keys(need)[i]}"`;
         }
         await bot.telegram.sendMessage(chatId, `Для этого вам нужно получить ${needStr}`)
+    } else if (data.includes('class_grade_')) {
+        users_grade = Number(data.charAt(data.length - 1));
+        if (users_grade === 1)
+            users_grade = 11
+        else if (users_grade === 0)
+            users_grade = 10;
+        return bot.telegram.sendMessage(
+            chatId,
+            'Буква вашего класса:',
+            class_letter_keys
+        )
+    } else if (data.includes('class_letter_')) {
+        users_letter = data.charAt(data.length - 1).toLowerCase();
+        bot.telegram.sendMessage(chatId, `Ваш класс: ${users_grade}-${users_letter.toUpperCase()}`)
     }
 
     return 1;

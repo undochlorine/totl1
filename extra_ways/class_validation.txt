@@ -1,0 +1,72 @@
+USING:
+     if (state === STATE_CLASS) {
+         users_class = textLC;
+         state = STATE_NORMAL;
+         [users_grade, users_letter] = functions.valid_class(users_class);
+         if (users_grade === WRONG_NUMBER) {
+             return bot.telegram.sendMessage(chatId, 'Такого класса нет. Используйте команду /set_class чтобы попробовать ещё раз.')
+         } else if (users_letter === WRONG_LETTER) {
+             return bot.telegram.sendMessage(chatId, 'Класса с такой буквой нет. Используйте команду /set_class чтобы попробовать ещё раз.');
+         } else if (users_letter === null && users_grade === null) {
+             return bot.telegram.sendMessage(chatId, `Вы ввели класс некоректно, повторите попытку, использую команду /set_class`);
+         } else {
+             return bot.telegram.sendMessage(chatId, `Окей. ваш класс: ${users_grade}-${users_letter}`);
+         }
+     }
+FUNCTION:
+    function valid_class(clas) {
+        let alph = alphabet;
+        let alphArray = alphabetArray;
+        let i, j;
+        let thereareletter = Boolean(false);
+        alphArray.forEach((letter) => {
+            if (clas.includes(letter)) thereareletter = true;
+        });
+        if (!thereareletter)
+            return [null, null];
+        for (i = 0; i < clas.length; i++) {
+            if (isNaN(Number(clas.charAt(i)))) break;
+        }
+        let users_grade = clas.slice(0, i);
+        let users_letter = '';
+        clas = clas.slice(i);
+
+        //убираем тире и всё такое
+        while (clas !== '') {
+            // console.log(`был clas: ${clas}`);
+            if (!alph.includes(clas[clas.length - 1])) {
+                // console.log('break');
+                break;
+            } else {
+                // console.log(`был ul: ${users_letter}`);
+                users_letter += clas[clas.length - 1];
+                // console.log(`стал ul: ${users_letter}`);
+                clas = clas.slice(0, (clas.length - 1));
+                // console.log(`стал clas: ${clas}`);
+            }
+        }
+        users_letter = users_letter.split('');
+        users_letter = users_letter.reverse();
+        users_letter = users_letter.join('');
+        // console.log([users_grade, users_letter]);
+        if ((users_grade === '') || (users_letter === '')) {
+            return [null, null];
+        } else if (users_letter.length > 1 || (!validClassLetters.includes(users_letter))) {
+            return [null, WRONG_LETTER]
+        } else if (Number(users_grade) > 11 || Number(users_grade) < 8) {
+            return [WRONG_NUMBER, null];
+        } else {
+            return [users_grade, users_letter];
+        }
+    }
+NECESSARY VARIABLES:
+    const alphabet = 'абвгдеёжзийклмнопрстуфхцчшщъыьэюя';
+    const alphabetArray = alphabet.split('');
+    const validClassLetters = ['а', 'б', 'в', 'г', 'д', 'е'];
+    const WRONG_NUMBER = 'wrong number';
+    const WRONG_LETTER = 'wrong letter'
+EXPORT:
+    const obj = {
+        valid_class: valid_class
+    }
+    export default obj
