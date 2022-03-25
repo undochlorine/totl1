@@ -333,7 +333,7 @@ bot.on('callback_query', async msg => {
         if(gpa >= (4 + markNeed))
             wannaUpBtn = {};
 
-        //если это превая вводимая оценка - просто выводим ее
+        //если это первая вводимая оценка - просто выводим ее
         if (marks[1] === undefined) {
             await bot.telegram.sendMessage(
                 chatId,
@@ -404,7 +404,7 @@ bot.on('callback_query', async msg => {
             //заполняем объект структорой {5: 19}, где нужно 19 пятёрок
             need[`${i}`] = needQ;
         }
-        //делаем из объекта готовуюб строку
+        //делаем из объекта готовую строку
         let needStr = ``;
         for (let i = 0; i < Object.keys(need).length; i++) {
             if(i === 0)
