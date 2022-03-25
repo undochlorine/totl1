@@ -8,7 +8,7 @@ const security = JSON.parse(readFileSync('./security.json'));
 
 const bot = new Telegraf(security["TELEGRAM_BOT_TOKEN"]);
 
-let users_letter = 'в', users_grade = '9';
+let users_letter = null, users_grade = null;
 let gpa;
 let wannaVariants;
 let marks = [];
