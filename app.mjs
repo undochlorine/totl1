@@ -118,13 +118,11 @@ bot.on('message', async ctx => {
                 'DD/MM/YYYY'
             ).unix();
             //проверяем расписание на актуальность
-            // console.log('period: ' + [periodStart, periodEnd === null]);
-            // console.log('today: ' + today);
 
             if(
-                (periodStart == null && periodEnd != null && today > periodEnd) ||
-                (periodStart != null && periodEnd != null && !(today > periodStart && today < periodEnd) ) ||
-                (periodEnd == null && periodStart != null && today < periodStart)
+                (Number.isNaN( periodStart ) && !Number.isNaN( periodEnd ) && today > periodEnd) ||
+                (!Number.isNaN( periodStart ) && !Number.isNaN( periodEnd ) && !(today > periodStart && today < periodEnd) ) ||
+                (Number.isNaN( periodEnd ) && !Number.isNaN( periodStart ) && today < periodStart)
             ) {
                 if(current === "offline")
                     current = "online"
@@ -137,14 +135,14 @@ bot.on('message', async ctx => {
             }
 
             if(
-                (periodEnd != null && today > periodEnd) ||
-                (periodStart != null && today < periodStart)
+                (!Number.isNaN( periodEnd ) && today > periodEnd) ||
+                (!Number.isNaN( periodStart ) && today < periodStart)
             )
                 return bot.telegram.sendMessage(chatId, 'У нас отсутствует акуальное расписание, попробуйте позже.')
             else if(
-                (periodEnd != null && today <= periodEnd && periodStart == null) ||
-                (periodStart != null && periodEnd != null && today >= periodStart && today <= periodEnd) ||
-                (periodStart != null && today >= periodStart && periodEnd == null)
+                (!Number.isNaN( periodEnd ) && today <= periodEnd && Number.isNaN( periodStart )) ||
+                (!Number.isNaN( periodStart ) && !Number.isNaN( periodEnd ) && today >= periodStart && today <= periodEnd) ||
+                (!Number.isNaN( periodStart ) && today >= periodStart && Number.isNaN( periodEnd ))
             ) {
                 let amountLessons;
                 if (json["classes"][users_grade][users_letter]["lessons"][todayDay] === null)
@@ -228,9 +226,9 @@ bot.on('message', async ctx => {
             // console.log('today: ' + today);
 
             if(
-                (periodStart == null && periodEnd != null && today > periodEnd) ||
-                (periodStart != null && periodEnd != null && !(today > periodStart && today < periodEnd) ) ||
-                (periodEnd == null && periodStart != null && today < periodStart)
+                (Number.isNaN( periodStart ) && !Number.isNaN( periodEnd ) && today > periodEnd) ||
+                (!Number.isNaN( periodStart ) && !Number.isNaN( periodEnd ) && !(today > periodStart && today < periodEnd) ) ||
+                (Number.isNaN( periodEnd ) && !Number.isNaN( periodStart ) && today < periodStart)
             ) {
                 if(current === "offline")
                     current = "online"
@@ -243,14 +241,14 @@ bot.on('message', async ctx => {
             }
 
             if(
-                (periodEnd != null && today > periodEnd) ||
-                (periodStart != null && today < periodStart)
+                (!Number.isNaN( periodEnd ) && today > periodEnd) ||
+                (!Number.isNaN( periodStart ) && today < periodStart)
             )
                 return bot.telegram.sendMessage(chatId, 'У нас отсутствует акуальное расписание, попробуйте позже.')
             else if(
-                (periodEnd != null && today <= periodEnd && periodStart == null) ||
-                (periodStart != null && periodEnd != null && today >= periodStart && today <= periodEnd) ||
-                (periodStart != null && today >= periodStart && periodEnd == null)
+                (!Number.isNaN( periodEnd ) && today <= periodEnd && Number.isNaN( periodStart )) ||
+                (!Number.isNaN( periodStart ) && !Number.isNaN( periodEnd ) && today >= periodStart && today <= periodEnd) ||
+                (!Number.isNaN( periodStart ) && today >= periodStart && Number.isNaN( periodEnd ))
             ) {
                 let amountLessons;
                 if (json["classes"][users_grade][users_letter]["lessons"][todayDay] === null)
@@ -302,9 +300,9 @@ bot.on('message', async ctx => {
             // console.log('today: ' + today);
 
             if(
-                (periodStart == null && periodEnd != null && today > periodEnd) ||
-                (periodStart != null && periodEnd != null && !(today > periodStart && today < periodEnd) ) ||
-                (periodEnd == null && periodStart != null && today < periodStart)
+                (Number.isNaN( periodStart ) && !Number.isNaN( periodEnd ) && today > periodEnd) ||
+                (!Number.isNaN( periodStart ) && !Number.isNaN( periodEnd ) && !(today > periodStart && today < periodEnd) ) ||
+                (Number.isNaN( periodEnd ) && !Number.isNaN( periodStart ) && today < periodStart)
             ) {
                 if(current === "offline")
                     current = "online"
@@ -317,14 +315,14 @@ bot.on('message', async ctx => {
             }
 
             if(
-                (periodEnd != null && today > periodEnd) ||
-                (periodStart != null && today < periodStart)
+                (!Number.isNaN( periodEnd ) && today > periodEnd) ||
+                (!Number.isNaN( periodStart ) && today < periodStart)
             )
                 return bot.telegram.sendMessage(chatId, 'У нас отсутствует акуальное расписание, попробуйте позже.')
             else if(
-                (periodEnd != null && today <= periodEnd && periodStart == null) ||
-                (periodStart != null && periodEnd != null && today >= periodStart && today <= periodEnd) ||
-                (periodStart != null && today >= periodStart && periodEnd == null)
+                (!Number.isNaN( periodEnd ) && today <= periodEnd && Number.isNaN( periodStart )) ||
+                (!Number.isNaN( periodStart ) && !Number.isNaN( periodEnd ) && today >= periodStart && today <= periodEnd) ||
+                (!Number.isNaN( periodStart ) && today >= periodStart && Number.isNaN( periodEnd ))
             ) {
                 let amountLessons;
                 if (json["classes"][users_grade][users_letter]["lessons"][todayDay] === null)
