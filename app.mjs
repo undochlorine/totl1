@@ -222,8 +222,6 @@ bot.on('message', async ctx => {
                 'DD/MM/YYYY'
             ).unix();
             //проверяем расписание на актуальность
-            // console.log('period: ' + [periodStart, periodEnd === null]);
-            // console.log('today: ' + today);
 
             if(
                 (Number.isNaN( periodStart ) && !Number.isNaN( periodEnd ) && today > periodEnd) ||
@@ -296,8 +294,6 @@ bot.on('message', async ctx => {
                 'DD/MM/YYYY'
             ).unix();
             //проверяем расписание на актуальность
-            // console.log('period: ' + [periodStart, periodEnd === null]);
-            // console.log('today: ' + today);
 
             if(
                 (Number.isNaN( periodStart ) && !Number.isNaN( periodEnd ) && today > periodEnd) ||
