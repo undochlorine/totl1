@@ -8,11 +8,36 @@ const security = JSON.parse(readFileSync('./security.json'));
 
 const bot = new Telegraf(security["TELEGRAM_BOT_TOKEN"]);
 
-let users_letter = null, users_grade = null;
-let gpa;
-let wannaVariants;
-let marks = [];
-let marksMgsId;
+const users = [];
+
+function takeUser(id) {
+    let newUser = true;
+    let index = -1;
+
+    for(let i = 0; i < users.length; i++) {
+        if(users[i].id === id) {
+            newUser = false;
+            index = i;
+            break;
+        }
+    }
+    if(newUser) {
+        let user = {
+            id: id,
+            users_letter: null,
+            users_grade: null,
+            gpa: undefined,
+            wannaVariants: undefined,
+            marks: [],
+            marksMgsId: undefined
+        }
+        index = users.length;
+
+        users.push(user);
+    }
+    return [index, newUser];
+}
+
 const marks_keys = {
     reply_markup: {
         inline_keyboard: [
@@ -73,15 +98,22 @@ bot.telegram.setMyCommands([
 bot.on('message', async ctx => {
     const text = ctx.message.text;
     const textLC = text.toLowerCase(); // textLC - message text in lower case
-    const from = ctx.from;
     const chatId = ctx.chat.id;
+    const newUserData = takeUser(ctx.from.id);
+    const user = users[ newUserData[0] ];
+    const newUser = newUserData[1];
+
     if (textLC === '/start') {
+        if(newUser)
+            console.log(ctx.from.first_name, ctx.from.last_name);
         return bot.telegram.sendMessage(
             chatId,
-            `Привет, ${from.first_name}! В каком вы классе?`,
+            `Привет, ${ctx.from.first_name}! В каком вы классе?`,
             class_grade_keys
         );
     } else if (textLC === '/set_class') {
+        if(newUser)
+            console.log(ctx.from.first_name, ctx.from.last_name);
         return bot.telegram.sendMessage(
             chatId,
             `В каком вы классе?`,
@@ -93,7 +125,7 @@ bot.on('message', async ctx => {
             (textLC.includes('урок') || textLC.includes('пара') || textLC.includes('звонок') || textLC.includes('перемена'))
         )
     ) {
-        if (users_grade == null || users_letter == null) {
+        if (user.users_grade == null || user.users_letter == null) {
             return bot.telegram.sendMessage(chatId, 'Для начала установите свой класс с помощью команды /set_class')
         } else {
             let json = await readFileSync('./fake_json/lyceum.json');
@@ -145,13 +177,13 @@ bot.on('message', async ctx => {
                 (!Number.isNaN( periodStart ) && today >= periodStart && Number.isNaN( periodEnd ))
             ) {
                 let amountLessons;
-                if (json["classes"][users_grade][users_letter]["lessons"][todayDay] === null)
+                if (json["classes"][user.users_grade][user.users_letter]["lessons"][todayDay] === null)
                     amountLessons = 4
                 else
-                    amountLessons = json["classes"][users_grade][users_letter]["lessons"][todayDay].length
+                    amountLessons = json["classes"][user.users_grade][user.users_letter]["lessons"][todayDay].length
                 let bell = functions.when_school_bell(
-                    json["classes"][users_grade][users_letter]["lessons"][todayDay],
-                    json["classes"][users_grade][users_letter]["lessons"],
+                    json["classes"][user.users_grade][user.users_letter]["lessons"][todayDay],
+                    json["classes"][user.users_grade][user.users_letter]["lessons"],
                     json["stuff"]["timetable"][current]["pares"],
                     amountLessons
                 );
@@ -163,13 +195,13 @@ bot.on('message', async ctx => {
         textLC === '/timetable_today' ||
         (textLC.includes('сегодня') && (textLC.includes('расписание') || textLC.includes('уроки') || textLC.includes('пары')))
     ) {
-        if (users_grade == null || users_letter == null) {
+        if (user.users_grade == null || user.users_letter == null) {
             return bot.telegram.sendMessage(chatId, 'Для начала установите свой класс с помощью команды /set_class')
         } else {
             let json = await readFileSync('./fake_json/lyceum.json');
             json = await JSON.parse(json);
             let todayDay = moment().format('dddd').toLowerCase()
-            let timetable = json["classes"][users_grade][users_letter]["lessons"][todayDay];
+            let timetable = json["classes"][user.users_grade][user.users_letter]["lessons"][todayDay];
             if (timetable == null)
                 return bot.telegram.sendMessage(chatId, 'Сегодня уроков нет.')
             else
@@ -179,13 +211,13 @@ bot.on('message', async ctx => {
         textLC === '/timetable_tomorrow' ||
         (textLC.includes('завтра') && (textLC.includes('расписание') || textLC.includes('уроки') || textLC.includes('пары')))
     ) {
-        if (users_grade == null || users_letter == null) {
+        if (user.users_grade == null || user.users_letter == null) {
             return bot.telegram.sendMessage(chatId, 'Для начала установите свой класс с помощью команды /set_class')
         } else {
             let json = await readFileSync('./fake_json/lyceum.json');
             json = await JSON.parse(json);
             let tomorrowDay = moment().add(1, 'days').format('dddd').toLowerCase()
-            let timetable = json["classes"][users_grade][users_letter]["lessons"][tomorrowDay];
+            let timetable = json["classes"][user.users_grade][user.users_letter]["lessons"][tomorrowDay];
             if (timetable == null)
                 return bot.telegram.sendMessage(chatId, 'Завтра уроков нет.')
             else
@@ -195,12 +227,12 @@ bot.on('message', async ctx => {
         textLC === '/current_lesson' ||
         (textLC.includes('сейчас') && (textLC.includes('пара') || textLC.includes('урок')))
     ) {
-        if (users_grade == null || users_letter == null) {
+        if (user.users_grade == null || user.users_letter == null) {
             return bot.telegram.sendMessage(chatId, 'Для начала установите свой класс с помощью команды /set_class')
         } else {
             let json = await readFileSync('./fake_json/lyceum.json');
             json = await JSON.parse(json);
-            let lessons = json["classes"][users_grade][users_letter]["lessons"][moment().format('dddd').toLowerCase()];
+            let lessons = json["classes"][user.users_grade][user.users_letter]["lessons"][moment().format('dddd').toLowerCase()];
 
             const todayDay = moment().format('dddd').toLowerCase();
             //current mode of learning(online/offline)
@@ -249,10 +281,10 @@ bot.on('message', async ctx => {
                 (!Number.isNaN( periodStart ) && today >= periodStart && Number.isNaN( periodEnd ))
             ) {
                 let amountLessons;
-                if (json["classes"][users_grade][users_letter]["lessons"][todayDay] === null)
+                if (json["classes"][user.users_grade][user.users_letter]["lessons"][todayDay] === null)
                     amountLessons = 4
                 else
-                    amountLessons = json["classes"][users_grade][users_letter]["lessons"][todayDay].length
+                    amountLessons = json["classes"][user.users_grade][user.users_letter]["lessons"][todayDay].length
                 let current_lesson = functions.current_lesson(
                     lessons,
                     json["stuff"]["timetable"][current]["pares"],
@@ -267,12 +299,12 @@ bot.on('message', async ctx => {
         (textLC.includes('следующая') && textLC.includes('пара')) ||
         (textLC.includes('следующий') && textLC.includes('урок'))
     ) {
-        if (users_grade == null || users_letter == null) {
+        if (user.users_grade == null || user.users_letter == null) {
             return bot.telegram.sendMessage(chatId, 'Для начала установите свой класс с помощью команды /set_class')
         } else {
             let json = await readFileSync('./fake_json/lyceum.json');
             json = await JSON.parse(json);
-            let lessons = json["classes"][users_grade][users_letter]["lessons"][moment().format('dddd').toLowerCase()];
+            let lessons = json["classes"][user.users_grade][user.users_letter]["lessons"][moment().format('dddd').toLowerCase()];
 
             const todayDay = moment().format('dddd').toLowerCase();
             //current mode of learning(online/offline)
@@ -321,10 +353,10 @@ bot.on('message', async ctx => {
                 (!Number.isNaN( periodStart ) && today >= periodStart && Number.isNaN( periodEnd ))
             ) {
                 let amountLessons;
-                if (json["classes"][users_grade][users_letter]["lessons"][todayDay] === null)
+                if (json["classes"][user.users_grade][user.users_letter]["lessons"][todayDay] === null)
                     amountLessons = 4
                 else
-                    amountLessons = json["classes"][users_grade][users_letter]["lessons"][todayDay].length
+                    amountLessons = json["classes"][user.users_grade][user.users_letter]["lessons"][todayDay].length
                 let current_lesson = functions.next_lesson(
                     lessons,
                     json["stuff"]["timetable"][current]["pares"],
@@ -337,7 +369,7 @@ bot.on('message', async ctx => {
     } else if (
         textLC === '/count_marks'
     ) {
-        marks = [];
+        user.marks = [];
         return bot.telegram.sendMessage(chatId, 'Введите свои оценки по определённому предмету:', marks_keys)
     } else if (
         textLC === '/events'
@@ -359,14 +391,17 @@ bot.on('message', async ctx => {
 bot.on('callback_query', async msg => {
     const chatId = msg.chat.id;
     const data = msg.callbackQuery.data;
+    const newUserData = takeUser(msg.from.id);
+    const user = users[ newUserData[0] ];
+    // const newUser = newUserData[1];
 
     // если ввел оценку - добавляем в массив
     if (['mark1', 'mark2', 'mark3', 'mark4', 'mark5'].includes(data)) {
         //добавляем оценку
-        marks.push(Number(data.charAt(data.length - 1)));
+        user.marks.push(Number(data.charAt(data.length - 1)));
 
-        let sum = marks.reduce((acc, next) => acc + next);
-        gpa = (sum / marks.length).toFixed(2);
+        let sum = user.marks.reduce((acc, next) => acc + next);
+        user.gpa = (sum / user.marks.length).toFixed(2);
         let wannaUpBtn = {
             reply_markup: {
                 inline_keyboard: [
@@ -375,27 +410,27 @@ bot.on('callback_query', async msg => {
             }
         };
         // если средний бал выше 4.60 то некуда уже подниматься
-        if (gpa >= (4 + markNeed))
+        if (user.gpa >= (4 + markNeed))
             wannaUpBtn = {};
 
         //если это первая вводимая оценка - просто выводим ее
-        if (marks[1] === undefined) {
+        if (user.marks[1] === undefined) {
             await bot.telegram.sendMessage(
                 chatId,
-                `Ваши оценки: ${marks.join(', ')}\nВаш средний бал: ${gpa}`,
+                `Ваши оценки: ${user.marks.join(', ')}\nВаш средний бал: ${user.gpa}`,
                 wannaUpBtn
             )
                 .then((msgInfo) => {
-                    marksMgsId = msgInfo.message_id
+                    user.marksMgsId = msgInfo.message_id
                 })
         }
         // либо редактируем уже имеющееся сообщение
         else
             await bot.telegram.editMessageText(
                 chatId,
-                marksMgsId,
+                user.marksMgsId,
                 null,
-                `Ваши оценки: ${marks.join(', ')}\nВаш средний бал: ${gpa}`,
+                `Ваши оценки: ${user.marks.join(', ')}\nВаш средний бал: ${user.gpa}`,
                 wannaUpBtn
             )
     } else if (data === 'wanna_up') {
@@ -403,15 +438,15 @@ bot.on('callback_query', async msg => {
         let min;
         //если оценка 3.22 -> предлагаем 4, 5
         //если оценка 3.79 -> предлагаем 5 потому что у него уже есть 4ка
-        if (Math.floor(gpa) === Math.floor(gpa - markNeed))
-            min = Math.floor(gpa) + 2
+        if (Math.floor(user.gpa) === Math.floor(user.gpa - markNeed))
+            min = Math.floor(user.gpa) + 2
         else
-            min = Math.floor(gpa) + 1;
-        wannaVariants = [];
+            min = Math.floor(user.gpa) + 1;
+        user.wannaVariants = [];
         for (let i = min; i <= 5; i++) {
-            wannaVariants.push(i);
+            user.wannaVariants.push(i);
         }
-        let wannaButtons = wannaVariants.map(el => ({text: el, callback_data: `wanna_${el}`}));
+        let wannaButtons = user.wannaVariants.map(el => ({text: el, callback_data: `wanna_${el}`}));
         await bot.telegram.sendMessage(chatId, 'Какую оценку вы хотите иметь?', {
             reply_markup: {
                 inline_keyboard: [
@@ -426,15 +461,15 @@ bot.on('callback_query', async msg => {
         const wannaValue = chosenMark - (1 - markNeed);
         //wannaValue = 3,60
         let min;
-        if (Math.floor(gpa) === Math.floor(gpa - markNeed))
-            min = Math.floor(gpa) + 2
+        if (Math.floor(user.gpa) === Math.floor(user.gpa - markNeed))
+            min = Math.floor(user.gpa) + 2
         else
-            min = Math.floor(gpa) + 1;
+            min = Math.floor(user.gpa) + 1;
         let need = {};
         //пробуем все оценки которые ему могут помочь
         for (let i = min; i <= 5; i++) {
             //не портим массив marks
-            let localMarks = [...marks];
+            let localMarks = [...user.marks];
             let needQ = 0;
             //если хотим 4, а i = 3, то не поможем, значит итерируемся дальше
             if (i < wannaValue)
@@ -459,19 +494,19 @@ bot.on('callback_query', async msg => {
         }
         await bot.telegram.sendMessage(chatId, `Для этого вам нужно получить ${needStr}`)
     } else if (data.includes('class_grade_')) {
-        users_grade = Number(data.charAt(data.length - 1));
-        if (users_grade === 1)
-            users_grade = 11
-        else if (users_grade === 0)
-            users_grade = 10;
+        user.users_grade = Number(data.charAt(data.length - 1));
+        if (user.users_grade === 1)
+            user.users_grade = 11
+        else if (user.users_grade === 0)
+            user.users_grade = 10;
         return bot.telegram.sendMessage(
             chatId,
             'Буква вашего класса:',
             class_letter_keys
         )
     } else if (data.includes('class_letter_')) {
-        users_letter = data.charAt(data.length - 1).toLowerCase();
-        return bot.telegram.sendMessage(chatId, `Ваш класс: ${users_grade}-${users_letter.toUpperCase()}`)
+        user.users_letter = data.charAt(data.length - 1).toLowerCase();
+        return bot.telegram.sendMessage(chatId, `Ваш класс: ${user.users_grade}-${user.users_letter.toUpperCase()}`)
     }
 
     return 1;
