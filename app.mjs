@@ -102,18 +102,16 @@ bot.on('message', async ctx => {
     const newUserData = takeUser(ctx.from.id);
     const user = users[ newUserData[0] ];
     const newUser = newUserData[1];
+    if(newUser)
+            console.log(ctx.from.first_name, ctx.from.last_name);
 
     if (textLC === '/start') {
-        if(newUser)
-            console.log(ctx.from.first_name, ctx.from.last_name);
         return bot.telegram.sendMessage(
             chatId,
             `Привет, ${ctx.from.first_name}! В каком вы классе?`,
             class_grade_keys
         );
     } else if (textLC === '/set_class') {
-        if(newUser)
-            console.log(ctx.from.first_name, ctx.from.last_name);
         return bot.telegram.sendMessage(
             chatId,
             `В каком вы классе?`,
