@@ -106,12 +106,16 @@ bot.on('message', async ctx => {
             console.log(ctx.from.first_name, ctx.from.last_name);
 
     if (textLC === '/start') {
+        user.users_grade = null;
+        user.users_letter = null;
         return bot.telegram.sendMessage(
             chatId,
             `Привет, ${ctx.from.first_name}! В каком вы классе?`,
             class_grade_keys
         );
     } else if (textLC === '/set_class') {
+        user.users_grade = null;
+        user.users_letter = null;
         return bot.telegram.sendMessage(
             chatId,
             `В каком вы классе?`,
@@ -497,14 +501,16 @@ bot.on('callback_query', async msg => {
             user.users_grade = 11
         else if (user.users_grade === 0)
             user.users_grade = 10;
-        return bot.telegram.sendMessage(
-            chatId,
-            'Буква вашего класса:',
-            class_letter_keys
-        )
+        if(user.users_letter !== null)
+            return bot.telegram.sendMessage(chatId, `Ваш класс: ${user.users_grade}-${user.users_letter.toUpperCase()}`)
+        else
+            return bot.telegram.sendMessage(chatId, 'Буква вашего класса:', class_letter_keys)
     } else if (data.includes('class_letter_')) {
         user.users_letter = data.charAt(data.length - 1).toLowerCase();
-        return bot.telegram.sendMessage(chatId, `Ваш класс: ${user.users_grade}-${user.users_letter.toUpperCase()}`)
+        if(user.users_grade !== null)
+            return bot.telegram.sendMessage(chatId, `Ваш класс: ${user.users_grade}-${user.users_letter.toUpperCase()}`)
+        else
+            return bot.telegram.sendMessage(chatId, `В каком вы классе?`, class_grade_keys)
     }
 
     return 1;
