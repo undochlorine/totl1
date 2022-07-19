@@ -152,9 +152,9 @@ function next_lesson(pares, timetable, lessons=4) {
 }
 
 const obj = {
-    when_school_bell: when_school_bell,
-    current_lesson: current_lesson,
-    next_lesson: next_lesson
+    when_school_bell,
+    current_lesson,
+    next_lesson
 }
 export default obj
 
