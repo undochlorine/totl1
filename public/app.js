@@ -31,6 +31,12 @@ function handleAnError(action) {
             return bot.telegram.sendMessage(action.chatId, `Попробуйте позже.`);
     }
 }
+function lessonsForADay(json, classData, day) {
+    return json["classes"][classData[0]][classData[1]]["lessons"][day];
+}
+function getTodayDay() {
+    return (0, moment_1.default)().format('dddd').toLowerCase();
+}
 function takeUser(id) {
     let newUser = true;
     let index = -1;
@@ -158,7 +164,7 @@ bot.on('message', async (ctx) => {
                 }
                 let json = await (0, fs_1.readFileSync)(json_path);
                 json = await JSON.parse(json);
-                const todayDay = (0, moment_1.default)().format('dddd').toLowerCase();
+                const todayDay = getTodayDay();
                 //currentStudyMode mode of learning(online/offline)
                 let currentStudyMode = "offline";
                 if (json["stuff"]["timetable"][currentStudyMode]["period"][0] === null && json["stuff"]["timetable"][currentStudyMode]["period"][1] === null)
@@ -171,7 +177,7 @@ bot.on('message', async (ctx) => {
                     .unix();
                 let periodEnd = (0, moment_1.default)(json["stuff"]["timetable"][currentStudyMode]["period"][1], 'DD.MM.YYYY')
                     .unix();
-                let today = (0, moment_1.default)(`${(0, moment_1.default)().format('DD')}/${(0, moment_1.default)().format('MM')}/${(0, moment_1.default)().format('YYYY')}`, 'DD/MM/YYYY').unix();
+                let today = (0, moment_1.default)(todayDay, 'dddd').unix();
                 //проверяем расписание на актуальность
                 if ((Number.isNaN(periodStart) && !Number.isNaN(periodEnd) && today > periodEnd) ||
                     (!Number.isNaN(periodStart) && !Number.isNaN(periodEnd) && !(today > periodStart && today < periodEnd)) ||
@@ -216,7 +222,7 @@ bot.on('message', async (ctx) => {
                 let json = await (0, fs_1.readFileSync)(json_path);
                 json = await JSON.parse(json);
                 let todayDay = (0, moment_1.default)().format('dddd').toLowerCase();
-                let timetable = json["classes"][user.users_grade][user.users_letter]["lessons"][todayDay];
+                let timetable = lessonsForADay(json, [user.users_grade, user.users_letter], todayDay);
                 if (timetable === null)
                     return bot.telegram.sendMessage(chatId, 'Сегодня уроков нет.');
                 return bot.telegram.sendMessage(chatId, `Расписание на сегодня:\n${timetable.map((el, index) => `${index + 1}. ${el}`).join('\n')}`);
@@ -236,7 +242,7 @@ bot.on('message', async (ctx) => {
                 let json = await (0, fs_1.readFileSync)(json_path);
                 json = await JSON.parse(json);
                 let tomorrowDay = (0, moment_1.default)().add(1, 'days').format('dddd').toLowerCase();
-                let timetable = json["classes"][user.users_grade][user.users_letter]["lessons"][tomorrowDay];
+                let timetable = lessonsForADay(json, [user.users_grade, user.users_letter], tomorrowDay);
                 if (timetable === null)
                     return bot.telegram.sendMessage(chatId, 'Завтра уроков нет.');
                 return bot.telegram.sendMessage(chatId, `Расписание на завтра:\n${timetable.map((el, index) => `${index + 1}. ${el}`).join('\n')}`);
@@ -255,8 +261,8 @@ bot.on('message', async (ctx) => {
                     return bot.telegram.sendMessage(chatId, 'Для начала установите свой класс с помощью команды /set_class');
                 let json = await (0, fs_1.readFileSync)(json_path);
                 json = await JSON.parse(json);
-                let lessons = json["classes"][user.users_grade][user.users_letter]["lessons"][(0, moment_1.default)().format('dddd').toLowerCase()];
-                const todayDay = (0, moment_1.default)().format('dddd').toLowerCase();
+                const todayDay = getTodayDay();
+                let lessons = lessonsForADay(json, [user.users_grade, user.users_letter], todayDay);
                 //currentStudyMode mode of learning(online/offline)
                 let currentStudyMode = "offline";
                 if (json["stuff"]["timetable"][currentStudyMode]["period"][0] === null && json["stuff"]["timetable"][currentStudyMode]["period"][1] === null)
@@ -269,7 +275,7 @@ bot.on('message', async (ctx) => {
                     .unix();
                 let periodEnd = (0, moment_1.default)(json["stuff"]["timetable"][currentStudyMode]["period"][1], 'DD.MM.YYYY')
                     .unix();
-                let today = (0, moment_1.default)(`${(0, moment_1.default)().format('DD')}/${(0, moment_1.default)().format('MM')}/${(0, moment_1.default)().format('YYYY')}`, 'DD/MM/YYYY').unix();
+                let today = (0, moment_1.default)(todayDay, 'dddd').unix();
                 //проверяем расписание на актуальность
                 if ((Number.isNaN(periodStart) && !Number.isNaN(periodEnd) && today > periodEnd) ||
                     (!Number.isNaN(periodStart) && !Number.isNaN(periodEnd) && !(today > periodStart && today < periodEnd)) ||
@@ -314,8 +320,8 @@ bot.on('message', async (ctx) => {
                     return bot.telegram.sendMessage(chatId, 'Для начала установите свой класс с помощью команды /set_class');
                 let json = await (0, fs_1.readFileSync)(json_path);
                 json = await JSON.parse(json);
-                let lessons = json["classes"][user.users_grade][user.users_letter]["lessons"][(0, moment_1.default)().format('dddd').toLowerCase()];
-                const todayDay = (0, moment_1.default)().format('dddd').toLowerCase();
+                const todayDay = getTodayDay();
+                let lessons = lessonsForADay(json, [user.users_grade, user.users_letter], todayDay);
                 //currentStudyMode mode of learning(online/offline)
                 let currentStudyMode = "offline";
                 if (json["stuff"]["timetable"][currentStudyMode]["period"][0] === null && json["stuff"]["timetable"][currentStudyMode]["period"][1] === null)
@@ -328,7 +334,7 @@ bot.on('message', async (ctx) => {
                     .unix();
                 let periodEnd = (0, moment_1.default)(json["stuff"]["timetable"][currentStudyMode]["period"][1], 'DD.MM.YYYY')
                     .unix();
-                let today = (0, moment_1.default)(`${(0, moment_1.default)().format('DD')}/${(0, moment_1.default)().format('MM')}/${(0, moment_1.default)().format('YYYY')}`, 'DD/MM/YYYY').unix();
+                let today = (0, moment_1.default)(todayDay, 'dddd').unix();
                 //проверяем расписание на актуальность
                 if ((Number.isNaN(periodStart) && !Number.isNaN(periodEnd) && today > periodEnd) ||
                     (!Number.isNaN(periodStart) && !Number.isNaN(periodEnd) && !(today > periodStart && today < periodEnd)) ||

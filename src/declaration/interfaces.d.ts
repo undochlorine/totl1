@@ -1,4 +1,4 @@
-import {SchoolDay, InlineKeyboard, TimetableForDay} from "./types";
+import {SchoolDay, InlineKeyboard} from "./types";
 
 export interface Week {
     "monday": SchoolDay,
@@ -19,7 +19,6 @@ export interface User {
     marksMgsId: undefined | number
 }
 export interface ErrorAction {
-    path?: string,
     chatId: number,
     e: any
 }
