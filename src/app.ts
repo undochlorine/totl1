@@ -1,33 +1,44 @@
 import {Telegraf} from 'telegraf';
-import functions from './functions.mjs';
+import functions from './functions.js';
 import moment from "moment";
 import {readFileSync} from "fs";
+import {User, ErrorAction, Markup, MarkupItem} from "./declaration/interfaces";
+import {Events, StudyMode, TimetableForDay} from "./declaration/types";
 
-// const stickers = JSON.parse(readFileSync('./stickers.json'));
-const security = JSON.parse(readFileSync('./security.json'));
+//path relative to the app
+let prtta: string = './';
+(() => {
+    try {
+        //trying to figure out if the app was launched by bash
+        readFileSync('./fake_json/lyceum.json')
+    } catch (e) {
+        prtta = './../'
+    }
+})()
+let json_path: string = `${prtta}fake_json/lyceum.json`;
+
+
+const security: any = JSON.parse(readFileSync(`${prtta}private/security.json`).toString())
 
 const bot = new Telegraf(security["TELEGRAM_BOT_TOKEN"]);
 
-const users = [];
+const users: User[] = [];
 
-function handleAnError(action) {
+function handleAnError(action: ErrorAction) {
+    console.log(action)
     switch (action.e.path) {
-        case "./fake_json/lyceum.json": {
-            if(action.hasOwnProperty('chatId'))
-                return bot.telegram.sendMessage(action.chatId, 'Информация утеряна, порпобуйте позже.')
-        } break;
-        default: {
-            if(action.hasOwnProperty('chatId'))
-                return bot.telegram.sendMessage(action.chatId, `Попробуйте позже.`);
-        }
+        case json_path:
+            return bot.telegram.sendMessage(action.chatId, 'Информация утеряна, порпобуйте позже.')
+        default:
+            return bot.telegram.sendMessage(action.chatId, `Попробуйте позже.`);
     }
 }
 
-function takeUser(id) {
-    let newUser = true;
-    let index = -1;
+function takeUser(id: number) {
+    let newUser: boolean = true;
+    let index: number = -1;
 
-    for (let i = 0; i < users.length; i++) {
+    for (let i: number = 0; i < users.length; i++) {
         if (users[i].id === id) {
             newUser = false;
             index = i;
@@ -35,7 +46,7 @@ function takeUser(id) {
         }
     }
     if (newUser) {
-        let user = {
+        let user: User = {
             id: id,
             users_letter: null,
             users_grade: null,
@@ -48,10 +59,11 @@ function takeUser(id) {
 
         users.push(user);
     }
-    return [index, newUser];
+    let response: [number, boolean] = [index, newUser]
+    return response;
 }
 
-const marks_keys = {
+const marks_keys: Markup = {
     reply_markup: {
         inline_keyboard: [
             [
@@ -66,8 +78,8 @@ const marks_keys = {
         ]
     }
 };
-const markNeed = 0.60;
-const class_letter_keys = {
+const markNeed: number = 0.60;
+const class_letter_keys: Markup = {
     reply_markup: {
         inline_keyboard: [
             [
@@ -83,7 +95,7 @@ const class_letter_keys = {
         ]
     }
 }
-const class_grade_keys = {
+const class_grade_keys: Markup = {
     reply_markup: {
         inline_keyboard: [
             [
@@ -109,12 +121,13 @@ bot.telegram.setMyCommands([
 ]);
 
 bot.on('message', async ctx => {
-    const text = ctx.message.text;
-    const textLC = text.toLowerCase(); // textLC - message text in lower case
-    const chatId = ctx.chat.id;
-    const newUserData = takeUser(ctx.from.id);
-    const user = users[newUserData[0]];
-    const newUser = newUserData[1];
+    // @ts-ignore
+    const text: string = ctx.message.text;
+    const textLC: string = text.toLowerCase(); // textLC - message text in lower case
+    const chatId: number = ctx.chat.id;
+    const newUserData: [number, boolean] = takeUser(ctx.from.id);
+    const user: User = users[newUserData[0]];
+    const newUser: boolean = newUserData[1];
     if (newUser)
         console.log(ctx.from.first_name, ctx.from.last_name);
 
@@ -156,27 +169,27 @@ bot.on('message', async ctx => {
     ) {
         await (async () => {
             try {
-                if (user.users_grade == null || user.users_letter == null) {
+                if (user.users_grade === null || user.users_letter === null) {
                     return bot.telegram.sendMessage(chatId, 'Для начала установите свой класс с помощью команды /set_class')
                 }
-                let json = await readFileSync('./fake_json/lyceum.json');
+                let json: any = await readFileSync(json_path);
                 json = await JSON.parse(json);
-                const todayDay = moment().format('dddd').toLowerCase();
-                //current mode of learning(online/offline)
-                let current = "offline";
-                if (json["stuff"]["timetable"][current]["period"][0] === null && json["stuff"]["timetable"][current]["period"][1] === null)
-                    current = "online";
+                const todayDay: string = moment().format('dddd').toLowerCase();
+                //currentStudyMode mode of learning(online/offline)
+                let currentStudyMode: StudyMode = "offline";
+                if (json["stuff"]["timetable"][currentStudyMode]["period"][0] === null && json["stuff"]["timetable"][currentStudyMode]["period"][1] === null)
+                    currentStudyMode = "online";
                 if (json["stuff"]["timetable"]["online"]["period"][0] === null && json["stuff"]["timetable"]["online"]["period"][1] === null)
-                    current = undefined;
+                    currentStudyMode = undefined;
 
-                if (!current)
+                if (!currentStudyMode)
                     return bot.telegram.sendMessage(chatId, 'Извините, у нас нету актуального расписания.');
 
-                let periodStart = moment(json["stuff"]["timetable"][current]["period"][0], 'DD.MM.YYYY')
+                let periodStart: number = moment(json["stuff"]["timetable"][currentStudyMode]["period"][0], 'DD.MM.YYYY')
                     .unix();
-                let periodEnd = moment(json["stuff"]["timetable"][current]["period"][1], 'DD.MM.YYYY')
+                let periodEnd: number = moment(json["stuff"]["timetable"][currentStudyMode]["period"][1], 'DD.MM.YYYY')
                     .unix();
-                let today = moment(
+                let today: number = moment(
                     `${moment().format('DD')}/${moment().format('MM')}/${moment().format('YYYY')}`,
                     'DD/MM/YYYY'
                 ).unix();
@@ -187,13 +200,13 @@ bot.on('message', async ctx => {
                     (!Number.isNaN(periodStart) && !Number.isNaN(periodEnd) && !(today > periodStart && today < periodEnd)) ||
                     (Number.isNaN(periodEnd) && !Number.isNaN(periodStart) && today < periodStart)
                 ) {
-                    if (current === "offline")
-                        current = "online"
+                    if (currentStudyMode === "offline")
+                        currentStudyMode = "online"
                     else
-                        current = "offline";
-                    periodStart = moment(json["stuff"]["timetable"][current]["period"][0], 'DD.MM.YYYY')
+                        currentStudyMode = "offline";
+                    periodStart = moment(json["stuff"]["timetable"][currentStudyMode]["period"][0], 'DD.MM.YYYY')
                         .unix();
-                    periodEnd = moment(json["stuff"]["timetable"][current]["period"][1], 'DD.MM.YYYY')
+                    periodEnd = moment(json["stuff"]["timetable"][currentStudyMode]["period"][1], 'DD.MM.YYYY')
                         .unix();
                 }
 
@@ -202,25 +215,25 @@ bot.on('message', async ctx => {
                     (!Number.isNaN(periodStart) && today < periodStart)
                 )
                     return bot.telegram.sendMessage(chatId, 'У нас отсутствует акуальное расписание, попробуйте позже.')
-                else if (
+                if (
                     (!Number.isNaN(periodEnd) && today <= periodEnd && Number.isNaN(periodStart)) ||
                     (!Number.isNaN(periodStart) && !Number.isNaN(periodEnd) && today >= periodStart && today <= periodEnd) ||
                     (!Number.isNaN(periodStart) && today >= periodStart && Number.isNaN(periodEnd))
                 ) {
-                    let amountLessons;
+                    let amountLessons: number;
                     if (json["classes"][user.users_grade][user.users_letter]["lessons"][todayDay] === null)
                         amountLessons = 4
                     else
                         amountLessons = json["classes"][user.users_grade][user.users_letter]["lessons"][todayDay].length
-                    let bell = functions.when_school_bell(
+                    let bell: string = functions.when_school_bell(
                         json["classes"][user.users_grade][user.users_letter]["lessons"][todayDay],
                         json["classes"][user.users_grade][user.users_letter]["lessons"],
-                        json["stuff"]["timetable"][current]["pares"],
+                        json["stuff"]["timetable"][currentStudyMode]["pares"],
                         amountLessons
                     );
                     return bot.telegram.sendMessage(chatId, bell)
-                } else
-                    return bot.telegram.sendMessage(chatId, 'Приносим свои извинения.\nРасписание заполнено некоректно.\nПостараемся это исправить в ближайшее время.')
+                }
+                return bot.telegram.sendMessage(chatId, 'Приносим свои извинения.\nРасписание заполнено некоректно.\nПостараемся это исправить в ближайшее время.')
             } catch (e) {
                 await handleAnError({e, chatId})
             }
@@ -234,11 +247,11 @@ bot.on('message', async ctx => {
             try {
                 if (user.users_grade == null || user.users_letter == null)
                     return bot.telegram.sendMessage(chatId, 'Для начала установите свой класс с помощью команды /set_class')
-                let json = await readFileSync('./fake_json/lyceum.json');
+                let json: any = await readFileSync(json_path);
                 json = await JSON.parse(json);
-                let todayDay = moment().format('dddd').toLowerCase()
-                let timetable = json["classes"][user.users_grade][user.users_letter]["lessons"][todayDay];
-                if (timetable == null)
+                let todayDay: string = moment().format('dddd').toLowerCase()
+                let timetable: TimetableForDay = json["classes"][user.users_grade][user.users_letter]["lessons"][todayDay];
+                if (timetable === null)
                     return bot.telegram.sendMessage(chatId, 'Сегодня уроков нет.')
                 return bot.telegram.sendMessage(chatId, `Расписание на сегодня:\n${timetable.map((el, index) => `${index + 1}. ${el}`).join('\n')}`);
             } catch (e) {
@@ -254,11 +267,11 @@ bot.on('message', async ctx => {
             try {
                 if (user.users_grade == null || user.users_letter == null)
                     return bot.telegram.sendMessage(chatId, 'Для начала установите свой класс с помощью команды /set_class')
-                let json = await readFileSync('./fake_json/lyceum.json');
+                let json: any = await readFileSync(json_path);
                 json = await JSON.parse(json);
-                let tomorrowDay = moment().add(1, 'days').format('dddd').toLowerCase()
-                let timetable = json["classes"][user.users_grade][user.users_letter]["lessons"][tomorrowDay];
-                if (timetable == null)
+                let tomorrowDay: string = moment().add(1, 'days').format('dddd').toLowerCase()
+                let timetable: TimetableForDay = json["classes"][user.users_grade][user.users_letter]["lessons"][tomorrowDay];
+                if (timetable === null)
                     return bot.telegram.sendMessage(chatId, 'Завтра уроков нет.')
                 return bot.telegram.sendMessage(chatId, `Расписание на завтра:\n${timetable.map((el, index) => `${index + 1}. ${el}`).join('\n')}`);
             } catch (e) {
@@ -274,26 +287,26 @@ bot.on('message', async ctx => {
             try {
                 if (user.users_grade == null || user.users_letter == null)
                     return bot.telegram.sendMessage(chatId, 'Для начала установите свой класс с помощью команды /set_class')
-                let json = await readFileSync('./fake_json/lyceum.json');
+                let json: any = await readFileSync(json_path);
                 json = await JSON.parse(json);
-                let lessons = json["classes"][user.users_grade][user.users_letter]["lessons"][moment().format('dddd').toLowerCase()];
+                let lessons: TimetableForDay = json["classes"][user.users_grade][user.users_letter]["lessons"][moment().format('dddd').toLowerCase()];
 
-                const todayDay = moment().format('dddd').toLowerCase();
-                //current mode of learning(online/offline)
-                let current = "offline";
-                if (json["stuff"]["timetable"][current]["period"][0] === null && json["stuff"]["timetable"][current]["period"][1] === null)
-                    current = "online";
+                const todayDay: string = moment().format('dddd').toLowerCase();
+                //currentStudyMode mode of learning(online/offline)
+                let currentStudyMode: StudyMode = "offline";
+                if (json["stuff"]["timetable"][currentStudyMode]["period"][0] === null && json["stuff"]["timetable"][currentStudyMode]["period"][1] === null)
+                    currentStudyMode = "online";
                 if (json["stuff"]["timetable"]["online"]["period"][0] === null && json["stuff"]["timetable"]["online"]["period"][1] === null)
-                    current = undefined;
+                    currentStudyMode = undefined;
 
-                if (!current)
+                if (!currentStudyMode)
                     return bot.telegram.sendMessage(chatId, 'Извините, у нас нету актуального расписания.');
 
-                let periodStart = moment(json["stuff"]["timetable"][current]["period"][0], 'DD.MM.YYYY')
+                let periodStart: number = moment(json["stuff"]["timetable"][currentStudyMode]["period"][0], 'DD.MM.YYYY')
                     .unix();
-                let periodEnd = moment(json["stuff"]["timetable"][current]["period"][1], 'DD.MM.YYYY')
+                let periodEnd: number = moment(json["stuff"]["timetable"][currentStudyMode]["period"][1], 'DD.MM.YYYY')
                     .unix();
-                let today = moment(
+                let today: number = moment(
                     `${moment().format('DD')}/${moment().format('MM')}/${moment().format('YYYY')}`,
                     'DD/MM/YYYY'
                 ).unix();
@@ -304,13 +317,13 @@ bot.on('message', async ctx => {
                     (!Number.isNaN(periodStart) && !Number.isNaN(periodEnd) && !(today > periodStart && today < periodEnd)) ||
                     (Number.isNaN(periodEnd) && !Number.isNaN(periodStart) && today < periodStart)
                 ) {
-                    if (current === "offline")
-                        current = "online"
+                    if (currentStudyMode === "offline")
+                        currentStudyMode = "online"
                     else
-                        current = "offline";
-                    periodStart = moment(json["stuff"]["timetable"][current]["period"][0], 'DD.MM.YYYY')
+                        currentStudyMode = "offline";
+                    periodStart = moment(json["stuff"]["timetable"][currentStudyMode]["period"][0], 'DD.MM.YYYY')
                         .unix();
-                    periodEnd = moment(json["stuff"]["timetable"][current]["period"][1], 'DD.MM.YYYY')
+                    periodEnd = moment(json["stuff"]["timetable"][currentStudyMode]["period"][1], 'DD.MM.YYYY')
                         .unix();
                 }
 
@@ -319,19 +332,19 @@ bot.on('message', async ctx => {
                     (!Number.isNaN(periodStart) && today < periodStart)
                 )
                     return bot.telegram.sendMessage(chatId, 'У нас отсутствует акуальное расписание, попробуйте позже.')
-                else if (
+                if (
                     (!Number.isNaN(periodEnd) && today <= periodEnd && Number.isNaN(periodStart)) ||
                     (!Number.isNaN(periodStart) && !Number.isNaN(periodEnd) && today >= periodStart && today <= periodEnd) ||
                     (!Number.isNaN(periodStart) && today >= periodStart && Number.isNaN(periodEnd))
                 ) {
-                    let amountLessons;
+                    let amountLessons: number;
                     if (json["classes"][user.users_grade][user.users_letter]["lessons"][todayDay] === null)
                         amountLessons = 4
                     else
                         amountLessons = json["classes"][user.users_grade][user.users_letter]["lessons"][todayDay].length
-                    let current_lesson = functions.current_lesson(
+                    let current_lesson: string = functions.current_lesson(
                         lessons,
-                        json["stuff"]["timetable"][current]["pares"],
+                        json["stuff"]["timetable"][currentStudyMode]["pares"],
                         amountLessons
                     );
                     return bot.telegram.sendMessage(chatId, `${current_lesson}`);
@@ -349,28 +362,28 @@ bot.on('message', async ctx => {
     ) {
         await (async () => {
             try {
-                if (user.users_grade == null || user.users_letter == null)
+                if (user.users_grade === null || user.users_letter === null)
                     return bot.telegram.sendMessage(chatId, 'Для начала установите свой класс с помощью команды /set_class')
-                let json = await readFileSync('./fake_json/lyceum.json');
+                let json: any = await readFileSync(json_path);
                 json = await JSON.parse(json);
-                let lessons = json["classes"][user.users_grade][user.users_letter]["lessons"][moment().format('dddd').toLowerCase()];
+                let lessons: TimetableForDay = json["classes"][user.users_grade][user.users_letter]["lessons"][moment().format('dddd').toLowerCase()];
 
-                const todayDay = moment().format('dddd').toLowerCase();
-                //current mode of learning(online/offline)
-                let current = "offline";
-                if (json["stuff"]["timetable"][current]["period"][0] === null && json["stuff"]["timetable"][current]["period"][1] === null)
-                    current = "online";
+                const todayDay: string = moment().format('dddd').toLowerCase();
+                //currentStudyMode mode of learning(online/offline)
+                let currentStudyMode: StudyMode = "offline";
+                if (json["stuff"]["timetable"][currentStudyMode]["period"][0] === null && json["stuff"]["timetable"][currentStudyMode]["period"][1] === null)
+                    currentStudyMode = "online";
                 if (json["stuff"]["timetable"]["online"]["period"][0] === null && json["stuff"]["timetable"]["online"]["period"][1] === null)
-                    current = undefined;
+                    currentStudyMode = undefined;
 
-                if (!current)
+                if (!currentStudyMode)
                     return bot.telegram.sendMessage(chatId, 'Извините, у нас нету актуального расписания.');
 
-                let periodStart = moment(json["stuff"]["timetable"][current]["period"][0], 'DD.MM.YYYY')
+                let periodStart: number = moment(json["stuff"]["timetable"][currentStudyMode]["period"][0], 'DD.MM.YYYY')
                     .unix();
-                let periodEnd = moment(json["stuff"]["timetable"][current]["period"][1], 'DD.MM.YYYY')
+                let periodEnd: number = moment(json["stuff"]["timetable"][currentStudyMode]["period"][1], 'DD.MM.YYYY')
                     .unix();
-                let today = moment(
+                let today: number = moment(
                     `${moment().format('DD')}/${moment().format('MM')}/${moment().format('YYYY')}`,
                     'DD/MM/YYYY'
                 ).unix();
@@ -381,13 +394,13 @@ bot.on('message', async ctx => {
                     (!Number.isNaN(periodStart) && !Number.isNaN(periodEnd) && !(today > periodStart && today < periodEnd)) ||
                     (Number.isNaN(periodEnd) && !Number.isNaN(periodStart) && today < periodStart)
                 ) {
-                    if (current === "offline")
-                        current = "online"
+                    if (currentStudyMode === "offline")
+                        currentStudyMode = "online"
                     else
-                        current = "offline";
-                    periodStart = moment(json["stuff"]["timetable"][current]["period"][0], 'DD.MM.YYYY')
+                        currentStudyMode = "offline";
+                    periodStart = moment(json["stuff"]["timetable"][currentStudyMode]["period"][0], 'DD.MM.YYYY')
                         .unix();
-                    periodEnd = moment(json["stuff"]["timetable"][current]["period"][1], 'DD.MM.YYYY')
+                    periodEnd = moment(json["stuff"]["timetable"][currentStudyMode]["period"][1], 'DD.MM.YYYY')
                         .unix();
                 }
 
@@ -396,22 +409,22 @@ bot.on('message', async ctx => {
                     (!Number.isNaN(periodStart) && today < periodStart)
                 )
                     return bot.telegram.sendMessage(chatId, 'У нас отсутствует акуальное расписание, попробуйте позже.')
-                else if (
+                if (
                     (!Number.isNaN(periodEnd) && today <= periodEnd && Number.isNaN(periodStart)) ||
                     (!Number.isNaN(periodStart) && !Number.isNaN(periodEnd) && today >= periodStart && today <= periodEnd) ||
                     (!Number.isNaN(periodStart) && today >= periodStart && Number.isNaN(periodEnd))
                 ) {
-                    let amountLessons;
+                    let amountLessons: number;
                     if (json["classes"][user.users_grade][user.users_letter]["lessons"][todayDay] === null)
                         amountLessons = 4
                     else
                         amountLessons = json["classes"][user.users_grade][user.users_letter]["lessons"][todayDay].length
-                    let current_lesson = functions.next_lesson(
+                    let next_lesson: string = functions.next_lesson(
                         lessons,
-                        json["stuff"]["timetable"][current]["pares"],
+                        json["stuff"]["timetable"][currentStudyMode]["pares"],
                         amountLessons
                     );
-                    return bot.telegram.sendMessage(chatId, `${current_lesson}`);
+                    return bot.telegram.sendMessage(chatId, `${next_lesson}`);
                 }
                 return bot.telegram.sendMessage(chatId, 'Приносим свои извинения.\nРасписание заполнено некоректно.\nПостараемся это исправить в ближайшее время.')
             } catch (e) {
@@ -436,11 +449,11 @@ bot.on('message', async ctx => {
     ) {
         await (async () => {
             try {
-                let json = readFileSync('./fake_json/lyceum.json');
+                let json: any = readFileSync(json_path);
                 json = await JSON.parse(json);
-                let events = json["stuff"]["events"];
+                let events: Events = json["stuff"]["events"];
                 await (async () => {
-                    for (let i = 0; i < events.length; i++) {
+                    for (let i: number = 0; i < events.length; i++) {
                         await bot.telegram.sendMessage(chatId, events[i]);
                     }
                 })()
@@ -456,11 +469,13 @@ bot.on('message', async ctx => {
 });
 
 bot.on('callback_query', async msg => {
-    const chatId = msg.chat.id;
-    const data = msg.callbackQuery.data;
-    const newUserData = takeUser(msg.from.id);
-    const user = users[newUserData[0]];
-    // const newUser = newUserData[1];
+    //@ts-ignore
+    const chatId: number = msg.chat.id;
+    //@ts-ignore
+    const data: string = msg.callbackQuery.data;
+    //@ts-ignore
+    const newUserData: [number, boolean] = takeUser(msg.from.id);
+    const user: User = users[newUserData[0]];
 
     // если ввел оценку - добавляем в массив
     if (['mark1', 'mark2', 'mark3', 'mark4', 'mark5'].includes(data)) {
@@ -469,9 +484,9 @@ bot.on('callback_query', async msg => {
                 //добавляем оценку
                 user.marks.push(Number(data.charAt(data.length - 1)));
 
-                let sum = user.marks.reduce((acc, next) => acc + next);
-                user.gpa = (sum / user.marks.length).toFixed(2);
-                let wannaUpBtn = {
+                let sum: number = user.marks.reduce((acc, next) => acc + next);
+                user.gpa = Number( (sum / user.marks.length).toFixed(2) );
+                let wannaUpBtn: Markup = {
                     reply_markup: {
                         inline_keyboard: [
                             [{text: 'Не устраивает', callback_data: 'wanna_up'}]
@@ -480,7 +495,13 @@ bot.on('callback_query', async msg => {
                 };
                 // если средний бал выше 4.60 то некуда уже подниматься
                 if (user.gpa >= (4 + markNeed))
-                    wannaUpBtn = {};
+                    wannaUpBtn = {
+                        reply_markup: {
+                            inline_keyboard: [
+                                []
+                            ]
+                        }
+                    };
 
                 //если это первая вводимая оценка - просто выводим ее
                 if (user.marks[1] === undefined) {
@@ -498,7 +519,7 @@ bot.on('callback_query', async msg => {
                     await bot.telegram.editMessageText(
                         chatId,
                         user.marksMgsId,
-                        null,
+                        undefined,
                         `Ваши оценки: ${user.marks.join(', ')}\nВаш средний бал: ${user.gpa}`,
                         wannaUpBtn
                     )
@@ -510,18 +531,18 @@ bot.on('callback_query', async msg => {
         await (async () => {
             try {
                 //если нажал на кнопку "не устраивает"
-                let min;
+                let min: number = -1;
                 //если оценка 3.22 -> предлагаем 4, 5
                 //если оценка 3.79 -> предлагаем 5 потому что у него уже есть 4ка
-                if (Math.floor(user.gpa) === Math.floor(user.gpa - markNeed))
+                if (user.gpa !== undefined && Math.floor(user.gpa) === Math.floor(user.gpa - markNeed))
                     min = Math.floor(user.gpa) + 2
-                else
+                else if(user.gpa !== undefined)
                     min = Math.floor(user.gpa) + 1;
                 user.wannaVariants = [];
-                for (let i = min; i <= 5; i++) {
+                for (let i: number = min; i <= 5; i++) {
                     user.wannaVariants.push(i);
                 }
-                let wannaButtons = user.wannaVariants.map(el => ({text: el, callback_data: `wanna_${el}`}));
+                let wannaButtons: MarkupItem[] = user.wannaVariants.map(el => ({text: String(el), callback_data: `wanna_${el}`}));
                 await bot.telegram.sendMessage(chatId, 'Какую оценку вы хотите иметь?', {
                     reply_markup: {
                         inline_keyboard: [
@@ -537,21 +558,21 @@ bot.on('callback_query', async msg => {
         await (async () => {
             try {
                 //если выбрал какую оценку хочет к примеру 4
-                const chosenMark = data.charAt(data.length - 1);
+                const chosenMark: number = Number( data.charAt(data.length - 1) );
                 //chosenMark = 4
-                const wannaValue = chosenMark - (1 - markNeed);
+                const wannaValue: number = chosenMark - (1 - markNeed);
                 //wannaValue = 3,60
-                let min;
-                if (Math.floor(user.gpa) === Math.floor(user.gpa - markNeed))
+                let min: number = -1;
+                if (user.gpa !== undefined && Math.floor(user.gpa) === Math.floor(user.gpa - markNeed))
                     min = Math.floor(user.gpa) + 2
-                else
+                else if(user.gpa !== undefined)
                     min = Math.floor(user.gpa) + 1;
-                let need = {};
+                let need: any = {};
                 //пробуем все оценки которые ему могут помочь
-                for (let i = min; i <= 5; i++) {
+                for (let i: number = min; i <= 5; i++) {
                     //не портим массив marks
-                    let localMarks = [...user.marks];
-                    let needQ = 0;
+                    let localMarks: number[] = [...user.marks];
+                    let needQ: number = 0;
                     //если хотим 4, а i = 3, то не поможем, значит итерируемся дальше
                     if (i < wannaValue)
                         continue;
@@ -566,8 +587,8 @@ bot.on('callback_query', async msg => {
                     need[`${i}`] = needQ;
                 }
                 //делаем из объекта готовую строку
-                let needStr = ``;
-                for (let i = 0; i < Object.keys(need).length; i++) {
+                let needStr: string = ``;
+                for (let i: number = 0; i < Object.keys(need).length; i++) {
                     if (i === 0)
                         needStr += `${Object.values(need)[i]} "${Object.keys(need)[i]}"`
                     else
@@ -588,8 +609,7 @@ bot.on('callback_query', async msg => {
                     user.users_grade = 10;
                 if (user.users_letter !== null)
                     return bot.telegram.sendMessage(chatId, `Ваш класс: ${user.users_grade}-${user.users_letter.toUpperCase()}`)
-                else
-                    return bot.telegram.sendMessage(chatId, 'Буква вашего класса:', class_letter_keys)
+                return bot.telegram.sendMessage(chatId, 'Буква вашего класса:', class_letter_keys)
             } catch (e) {
                 await handleAnError({e, chatId})
             }
@@ -600,8 +620,7 @@ bot.on('callback_query', async msg => {
                 user.users_letter = data.charAt(data.length - 1).toLowerCase();
                 if (user.users_grade !== null)
                     return bot.telegram.sendMessage(chatId, `Ваш класс: ${user.users_grade}-${user.users_letter.toUpperCase()}`)
-                else
-                    return bot.telegram.sendMessage(chatId, `В каком вы классе?`, class_grade_keys)
+                return bot.telegram.sendMessage(chatId, `В каком вы классе?`, class_grade_keys)
             } catch (e) {
                 await handleAnError({e, chatId})
             }
