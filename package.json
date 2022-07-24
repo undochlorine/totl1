@@ -4,7 +4,9 @@
   "description": "",
   "main": "src/functions.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "compile": "tsc",
+    "devStart": "nodemon public/app.js",
+    "prodStart": "node public/app.js"
   },
   "repository": {
     "type": "git",
