@@ -23,7 +23,7 @@ const security = JSON.parse((0, fs_1.readFileSync)(`${prtta}private/security.jso
 const bot = new telegraf_1.Telegraf(security["TELEGRAM_BOT_TOKEN"]);
 const users = [];
 function handleAnError(action) {
-    console.log(action);
+    console.log(action.e);
     switch (action.e.path) {
         case json_path:
             return bot.telegram.sendMessage(action.chatId, 'Информация утеряна, порпобуйте позже.');

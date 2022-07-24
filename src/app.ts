@@ -24,7 +24,7 @@ const bot = new Telegraf(security["TELEGRAM_BOT_TOKEN"]);
 const users: User[] = [];
 
 function handleAnError(action: ErrorAction) {
-    console.log(action)
+    console.log(action.e)
     switch (action.e.path) {
         case json_path:
             return bot.telegram.sendMessage(action.chatId, 'Информация утеряна, порпобуйте позже.')
