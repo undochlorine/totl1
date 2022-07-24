@@ -1,13 +1,13 @@
-import {SchoolDay, InlineKeyboard} from "./types";
+import {InlineKeyboard, TimetableForDay} from "./types";
 
 export interface Week {
-    "monday": SchoolDay,
-    "tuesday": SchoolDay,
-    "wednesday": SchoolDay,
-    "thursday": SchoolDay,
-    "friday": SchoolDay,
-    "saturday": SchoolDay,
-    "sunday": SchoolDay
+    "monday": TimetableForDay,
+    "tuesday": TimetableForDay,
+    "wednesday": TimetableForDay,
+    "thursday": TimetableForDay,
+    "friday": TimetableForDay,
+    "saturday": TimetableForDay,
+    "sunday": TimetableForDay
 }
 export interface User {
     id: number,
