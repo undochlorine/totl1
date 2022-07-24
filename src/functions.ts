@@ -5,9 +5,13 @@ import {TimetableForDay} from "./declaration/types";
 function when_school_bell(
         pares: TimetableForDay,
         week: Week,
-        timetable: string[][],
-        lessons: number = 4
+        timetable: string[][]
     ): string {
+    let lessons: number;
+    if(pares !== null)
+        lessons = pares.length
+    else
+        lessons = 4
     const now: string = moment().format('H:m');
     // now format: "09.42"
     // timetable format: [ ["08.30", "09.30"], [...], [...], [...] ]
@@ -92,9 +96,13 @@ function when_school_bell(
 
 function current_lesson(
         pares: TimetableForDay,
-        timetable: string[][],
-        lessons: number = 4
+        timetable: string[][]
     ): string {
+    let lessons: number;
+    if(pares !== null)
+        lessons = pares.length
+    else
+        lessons = 4
     timetable.length = lessons;
     if( pares === null )
         return 'Сегодня уроков нет.';
@@ -129,9 +137,13 @@ function current_lesson(
 
 function next_lesson(
     pares: TimetableForDay,
-    timetable: string[][],
-    lessons: number = 4
+    timetable: string[][]
 ): string {
+    let lessons: number;
+    if(pares !== null)
+        lessons = pares.length
+    else
+        lessons = 4
     timetable.length = lessons;
     if( pares === null )
         return 'Сегодня уроков нет.';

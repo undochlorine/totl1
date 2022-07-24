@@ -197,12 +197,7 @@ bot.on('message', async (ctx) => {
                 if ((!Number.isNaN(periodEnd) && today <= periodEnd && Number.isNaN(periodStart)) ||
                     (!Number.isNaN(periodStart) && !Number.isNaN(periodEnd) && today >= periodStart && today <= periodEnd) ||
                     (!Number.isNaN(periodStart) && today >= periodStart && Number.isNaN(periodEnd))) {
-                    let amountLessons;
-                    if (json["classes"][user.users_grade][user.users_letter]["lessons"][todayDay] === null)
-                        amountLessons = 4;
-                    else
-                        amountLessons = json["classes"][user.users_grade][user.users_letter]["lessons"][todayDay].length;
-                    let bell = functions_js_1.default.when_school_bell(json["classes"][user.users_grade][user.users_letter]["lessons"][todayDay], json["classes"][user.users_grade][user.users_letter]["lessons"], json["stuff"]["timetable"][currentStudyMode]["pares"], amountLessons);
+                    let bell = functions_js_1.default.when_school_bell(json["classes"][user.users_grade][user.users_letter]["lessons"][todayDay], json["classes"][user.users_grade][user.users_letter]["lessons"], json["stuff"]["timetable"][currentStudyMode]["pares"]);
                     return bot.telegram.sendMessage(chatId, bell);
                 }
                 return bot.telegram.sendMessage(chatId, 'Приносим свои извинения.\nРасписание заполнено некоректно.\nПостараемся это исправить в ближайшее время.');
@@ -295,12 +290,7 @@ bot.on('message', async (ctx) => {
                 if ((!Number.isNaN(periodEnd) && today <= periodEnd && Number.isNaN(periodStart)) ||
                     (!Number.isNaN(periodStart) && !Number.isNaN(periodEnd) && today >= periodStart && today <= periodEnd) ||
                     (!Number.isNaN(periodStart) && today >= periodStart && Number.isNaN(periodEnd))) {
-                    let amountLessons;
-                    if (json["classes"][user.users_grade][user.users_letter]["lessons"][todayDay] === null)
-                        amountLessons = 4;
-                    else
-                        amountLessons = json["classes"][user.users_grade][user.users_letter]["lessons"][todayDay].length;
-                    let current_lesson = functions_js_1.default.current_lesson(lessons, json["stuff"]["timetable"][currentStudyMode]["pares"], amountLessons);
+                    let current_lesson = functions_js_1.default.current_lesson(lessons, json["stuff"]["timetable"][currentStudyMode]["pares"]);
                     return bot.telegram.sendMessage(chatId, `${current_lesson}`);
                 }
                 return bot.telegram.sendMessage(chatId, 'Приносим свои извинения.\nРасписание заполнено некоректно.\nПостараемся это исправить в ближайшее время.');
@@ -354,12 +344,7 @@ bot.on('message', async (ctx) => {
                 if ((!Number.isNaN(periodEnd) && today <= periodEnd && Number.isNaN(periodStart)) ||
                     (!Number.isNaN(periodStart) && !Number.isNaN(periodEnd) && today >= periodStart && today <= periodEnd) ||
                     (!Number.isNaN(periodStart) && today >= periodStart && Number.isNaN(periodEnd))) {
-                    let amountLessons;
-                    if (json["classes"][user.users_grade][user.users_letter]["lessons"][todayDay] === null)
-                        amountLessons = 4;
-                    else
-                        amountLessons = json["classes"][user.users_grade][user.users_letter]["lessons"][todayDay].length;
-                    let next_lesson = functions_js_1.default.next_lesson(lessons, json["stuff"]["timetable"][currentStudyMode]["pares"], amountLessons);
+                    let next_lesson = functions_js_1.default.next_lesson(lessons, json["stuff"]["timetable"][currentStudyMode]["pares"]);
                     return bot.telegram.sendMessage(chatId, `${next_lesson}`);
                 }
                 return bot.telegram.sendMessage(chatId, 'Приносим свои извинения.\nРасписание заполнено некоректно.\nПостараемся это исправить в ближайшее время.');

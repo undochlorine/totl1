@@ -4,7 +4,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const moment_1 = __importDefault(require("moment"));
-function when_school_bell(pares, week, timetable, lessons = 4) {
+function when_school_bell(pares, week, timetable) {
+    let lessons;
+    if (pares !== null)
+        lessons = pares.length;
+    else
+        lessons = 4;
     const now = (0, moment_1.default)().format('H:m');
     // now format: "09.42"
     // timetable format: [ ["08.30", "09.30"], [...], [...], [...] ]
@@ -72,7 +77,12 @@ function when_school_bell(pares, week, timetable, lessons = 4) {
     }
     return 'Произошла ошибка.';
 }
-function current_lesson(pares, timetable, lessons = 4) {
+function current_lesson(pares, timetable) {
+    let lessons;
+    if (pares !== null)
+        lessons = pares.length;
+    else
+        lessons = 4;
     timetable.length = lessons;
     if (pares === null)
         return 'Сегодня уроков нет.';
@@ -98,7 +108,12 @@ function current_lesson(pares, timetable, lessons = 4) {
     }
     return 'Произошла ошибка.';
 }
-function next_lesson(pares, timetable, lessons = 4) {
+function next_lesson(pares, timetable) {
+    let lessons;
+    if (pares !== null)
+        lessons = pares.length;
+    else
+        lessons = 4;
     timetable.length = lessons;
     if (pares === null)
         return 'Сегодня уроков нет.';

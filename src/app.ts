@@ -229,16 +229,10 @@ bot.on('message', async ctx => {
                     (!Number.isNaN(periodStart) && !Number.isNaN(periodEnd) && today >= periodStart && today <= periodEnd) ||
                     (!Number.isNaN(periodStart) && today >= periodStart && Number.isNaN(periodEnd))
                 ) {
-                    let amountLessons: number;
-                    if (json["classes"][user.users_grade][user.users_letter]["lessons"][todayDay] === null)
-                        amountLessons = 4
-                    else
-                        amountLessons = json["classes"][user.users_grade][user.users_letter]["lessons"][todayDay].length
                     let bell: string = functions.when_school_bell(
                         json["classes"][user.users_grade][user.users_letter]["lessons"][todayDay],
                         json["classes"][user.users_grade][user.users_letter]["lessons"],
-                        json["stuff"]["timetable"][currentStudyMode]["pares"],
-                        amountLessons
+                        json["stuff"]["timetable"][currentStudyMode]["pares"]
                     );
                     return bot.telegram.sendMessage(chatId, bell)
                 }
@@ -354,15 +348,9 @@ bot.on('message', async ctx => {
                     (!Number.isNaN(periodStart) && !Number.isNaN(periodEnd) && today >= periodStart && today <= periodEnd) ||
                     (!Number.isNaN(periodStart) && today >= periodStart && Number.isNaN(periodEnd))
                 ) {
-                    let amountLessons: number;
-                    if (json["classes"][user.users_grade][user.users_letter]["lessons"][todayDay] === null)
-                        amountLessons = 4
-                    else
-                        amountLessons = json["classes"][user.users_grade][user.users_letter]["lessons"][todayDay].length
                     let current_lesson: string = functions.current_lesson(
                         lessons,
-                        json["stuff"]["timetable"][currentStudyMode]["pares"],
-                        amountLessons
+                        json["stuff"]["timetable"][currentStudyMode]["pares"]
                     );
                     return bot.telegram.sendMessage(chatId, `${current_lesson}`);
                 }
@@ -431,15 +419,9 @@ bot.on('message', async ctx => {
                     (!Number.isNaN(periodStart) && !Number.isNaN(periodEnd) && today >= periodStart && today <= periodEnd) ||
                     (!Number.isNaN(periodStart) && today >= periodStart && Number.isNaN(periodEnd))
                 ) {
-                    let amountLessons: number;
-                    if (json["classes"][user.users_grade][user.users_letter]["lessons"][todayDay] === null)
-                        amountLessons = 4
-                    else
-                        amountLessons = json["classes"][user.users_grade][user.users_letter]["lessons"][todayDay].length
                     let next_lesson: string = functions.next_lesson(
                         lessons,
-                        json["stuff"]["timetable"][currentStudyMode]["pares"],
-                        amountLessons
+                        json["stuff"]["timetable"][currentStudyMode]["pares"]
                     );
                     return bot.telegram.sendMessage(chatId, `${next_lesson}`);
                 }
