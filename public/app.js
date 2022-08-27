@@ -105,324 +105,329 @@ bot.telegram.setMyCommands([
     { command: '/events', description: 'Последние события в лицее и в мире.' }
 ]);
 bot.on('message', async (ctx) => {
-    // @ts-ignore
-    const text = ctx.message.text;
-    const textLC = text.toLowerCase(); // textLC - message text in lower case
-    const chatId = ctx.chat.id;
-    const newUserData = takeUser(ctx.from.id);
-    const user = users[newUserData[0]];
-    const newUser = newUserData[1];
-    if (newUser)
-        console.log(ctx.from.first_name, ctx.from.last_name);
-    if (textLC === '/start') {
-        await (async () => {
-            try {
-                user.users_grade = null;
-                user.users_letter = null;
-                return bot.telegram.sendMessage(chatId, `Привет, ${ctx.from.first_name}! В каком вы классе?`, class_grade_keys);
-            }
-            catch (e) {
-                await handleAnError({ e, chatId });
-            }
-        })();
-        return 1;
-    }
-    else if (textLC === '/set_class') {
-        await (async () => {
-            try {
-                user.users_grade = null;
-                user.users_letter = null;
-                return bot.telegram.sendMessage(chatId, `В каком вы классе?`, class_grade_keys);
-            }
-            catch (e) {
-                await handleAnError({ e, chatId });
-            }
-        })();
-        return 1;
-    }
-    else if (textLC === '/when_school_bell' ||
-        (textLC.includes('когда') &&
-            (textLC.includes('урок') || textLC.includes('пара') || textLC.includes('звонок') || textLC.includes('перемена')))) {
-        await (async () => {
-            try {
-                if (user.users_grade === null || user.users_letter === null) {
-                    return bot.telegram.sendMessage(chatId, 'Для начала установите свой класс с помощью команды /set_class');
+    try {
+        // @ts-ignore
+        const text = ctx.message.text;
+        const textLC = text.toLowerCase(); // textLC - message text in lower case
+        const chatId = ctx.chat.id;
+        const newUserData = takeUser(ctx.from.id);
+        const user = users[newUserData[0]];
+        const newUser = newUserData[1];
+        if (newUser)
+            console.log(ctx.from.first_name, ctx.from.last_name);
+        if (textLC === '/start') {
+            await (async () => {
+                try {
+                    user.users_grade = null;
+                    user.users_letter = null;
+                    return bot.telegram.sendMessage(chatId, `Привет, ${ctx.from.first_name}! В каком вы классе?`, class_grade_keys);
                 }
-                let json = await (0, fs_1.readFileSync)(json_path);
-                json = await JSON.parse(json);
-                const todayDay = getTodayDay();
-                //currentStudyMode mode of learning(online/offline)
-                let currentStudyMode = "offline";
-                if (json["stuff"]["timetable"][currentStudyMode]["period"][0] === null && json["stuff"]["timetable"][currentStudyMode]["period"][1] === null)
-                    currentStudyMode = "online";
-                if (json["stuff"]["timetable"]["online"]["period"][0] === null && json["stuff"]["timetable"]["online"]["period"][1] === null)
-                    currentStudyMode = undefined;
-                if (!currentStudyMode)
-                    return bot.telegram.sendMessage(chatId, 'Извините, у нас нету актуального расписания.');
-                let periodStart = (0, moment_1.default)(json["stuff"]["timetable"][currentStudyMode]["period"][0], 'DD.MM.YYYY')
-                    .unix();
-                let periodEnd = (0, moment_1.default)(json["stuff"]["timetable"][currentStudyMode]["period"][1], 'DD.MM.YYYY')
-                    .unix();
-                let today = (0, moment_1.default)(todayDay, 'dddd').unix();
-                //проверяем расписание на актуальность
-                if ((Number.isNaN(periodStart) && !Number.isNaN(periodEnd) && today > periodEnd) ||
-                    (!Number.isNaN(periodStart) && !Number.isNaN(periodEnd) && !(today > periodStart && today < periodEnd)) ||
-                    (Number.isNaN(periodEnd) && !Number.isNaN(periodStart) && today < periodStart)) {
-                    if (currentStudyMode === "offline")
-                        currentStudyMode = "online";
-                    else
-                        currentStudyMode = "offline";
-                    periodStart = (0, moment_1.default)(json["stuff"]["timetable"][currentStudyMode]["period"][0], 'DD.MM.YYYY')
-                        .unix();
-                    periodEnd = (0, moment_1.default)(json["stuff"]["timetable"][currentStudyMode]["period"][1], 'DD.MM.YYYY')
-                        .unix();
+                catch (e) {
+                    await handleAnError({ e, chatId });
                 }
-                if ((!Number.isNaN(periodEnd) && today > periodEnd) ||
-                    (!Number.isNaN(periodStart) && today < periodStart))
-                    return bot.telegram.sendMessage(chatId, 'У нас отсутствует акуальное расписание, попробуйте позже.');
-                if ((!Number.isNaN(periodEnd) && today <= periodEnd && Number.isNaN(periodStart)) ||
-                    (!Number.isNaN(periodStart) && !Number.isNaN(periodEnd) && today >= periodStart && today <= periodEnd) ||
-                    (!Number.isNaN(periodStart) && today >= periodStart && Number.isNaN(periodEnd))) {
-                    let bell = functions_js_1.default.when_school_bell(json["classes"][user.users_grade][user.users_letter]["lessons"][todayDay], json["classes"][user.users_grade][user.users_letter]["lessons"], json["stuff"]["timetable"][currentStudyMode]["pares"]);
-                    return bot.telegram.sendMessage(chatId, bell);
+            })();
+            return 1;
+        }
+        else if (textLC === '/set_class') {
+            await (async () => {
+                try {
+                    user.users_grade = null;
+                    user.users_letter = null;
+                    return bot.telegram.sendMessage(chatId, `В каком вы классе?`, class_grade_keys);
                 }
-                return bot.telegram.sendMessage(chatId, 'Приносим свои извинения.\nРасписание заполнено некоректно.\nПостараемся это исправить в ближайшее время.');
-            }
-            catch (e) {
-                await handleAnError({ e, chatId });
-            }
-        })();
-        return 1;
-    }
-    else if (textLC === '/timetable_today' ||
-        (textLC.includes('сегодня') && (textLC.includes('расписание') || textLC.includes('уроки') || textLC.includes('пары')))) {
-        await (async () => {
-            try {
-                if (user.users_grade == null || user.users_letter == null)
-                    return bot.telegram.sendMessage(chatId, 'Для начала установите свой класс с помощью команды /set_class');
-                let json = await (0, fs_1.readFileSync)(json_path);
-                json = await JSON.parse(json);
-                let todayDay = (0, moment_1.default)().format('dddd').toLowerCase();
-                let timetable = lessonsForADay(json, [user.users_grade, user.users_letter], todayDay);
-                if (timetable === null)
-                    return bot.telegram.sendMessage(chatId, 'Сегодня уроков нет.');
-                return bot.telegram.sendMessage(chatId, `Расписание на сегодня:\n${timetable.map((el, index) => `${index + 1}. ${el}`).join('\n')}`);
-            }
-            catch (e) {
-                await handleAnError({ e, chatId });
-            }
-        })();
-        return 1;
-    }
-    else if (textLC === '/timetable_tomorrow' ||
-        (textLC.includes('завтра') && (textLC.includes('расписание') || textLC.includes('уроки') || textLC.includes('пары')))) {
-        await (async () => {
-            try {
-                if (user.users_grade == null || user.users_letter == null)
-                    return bot.telegram.sendMessage(chatId, 'Для начала установите свой класс с помощью команды /set_class');
-                let json = await (0, fs_1.readFileSync)(json_path);
-                json = await JSON.parse(json);
-                let tomorrowDay = (0, moment_1.default)().add(1, 'days').format('dddd').toLowerCase();
-                let timetable = lessonsForADay(json, [user.users_grade, user.users_letter], tomorrowDay);
-                if (timetable === null)
-                    return bot.telegram.sendMessage(chatId, 'Завтра уроков нет.');
-                return bot.telegram.sendMessage(chatId, `Расписание на завтра:\n${timetable.map((el, index) => `${index + 1}. ${el}`).join('\n')}`);
-            }
-            catch (e) {
-                await handleAnError({ e, chatId });
-            }
-        })();
-        return 1;
-    }
-    else if (textLC === '/current_lesson' ||
-        (textLC.includes('сейчас') && (textLC.includes('пара') || textLC.includes('урок')))) {
-        await (async () => {
-            try {
-                if (user.users_grade == null || user.users_letter == null)
-                    return bot.telegram.sendMessage(chatId, 'Для начала установите свой класс с помощью команды /set_class');
-                let json = await (0, fs_1.readFileSync)(json_path);
-                json = await JSON.parse(json);
-                const todayDay = getTodayDay();
-                let lessons = lessonsForADay(json, [user.users_grade, user.users_letter], todayDay);
-                //currentStudyMode mode of learning(online/offline)
-                let currentStudyMode = "offline";
-                if (json["stuff"]["timetable"][currentStudyMode]["period"][0] === null && json["stuff"]["timetable"][currentStudyMode]["period"][1] === null)
-                    currentStudyMode = "online";
-                if (json["stuff"]["timetable"]["online"]["period"][0] === null && json["stuff"]["timetable"]["online"]["period"][1] === null)
-                    currentStudyMode = undefined;
-                if (!currentStudyMode)
-                    return bot.telegram.sendMessage(chatId, 'Извините, у нас нету актуального расписания.');
-                let periodStart = (0, moment_1.default)(json["stuff"]["timetable"][currentStudyMode]["period"][0], 'DD.MM.YYYY')
-                    .unix();
-                let periodEnd = (0, moment_1.default)(json["stuff"]["timetable"][currentStudyMode]["period"][1], 'DD.MM.YYYY')
-                    .unix();
-                let today = (0, moment_1.default)(todayDay, 'dddd').unix();
-                //проверяем расписание на актуальность
-                if ((Number.isNaN(periodStart) && !Number.isNaN(periodEnd) && today > periodEnd) ||
-                    (!Number.isNaN(periodStart) && !Number.isNaN(periodEnd) && !(today > periodStart && today < periodEnd)) ||
-                    (Number.isNaN(periodEnd) && !Number.isNaN(periodStart) && today < periodStart)) {
-                    if (currentStudyMode === "offline")
-                        currentStudyMode = "online";
-                    else
-                        currentStudyMode = "offline";
-                    periodStart = (0, moment_1.default)(json["stuff"]["timetable"][currentStudyMode]["period"][0], 'DD.MM.YYYY')
-                        .unix();
-                    periodEnd = (0, moment_1.default)(json["stuff"]["timetable"][currentStudyMode]["period"][1], 'DD.MM.YYYY')
-                        .unix();
+                catch (e) {
+                    await handleAnError({ e, chatId });
                 }
-                if ((!Number.isNaN(periodEnd) && today > periodEnd) ||
-                    (!Number.isNaN(periodStart) && today < periodStart))
-                    return bot.telegram.sendMessage(chatId, 'У нас отсутствует акуальное расписание, попробуйте позже.');
-                if ((!Number.isNaN(periodEnd) && today <= periodEnd && Number.isNaN(periodStart)) ||
-                    (!Number.isNaN(periodStart) && !Number.isNaN(periodEnd) && today >= periodStart && today <= periodEnd) ||
-                    (!Number.isNaN(periodStart) && today >= periodStart && Number.isNaN(periodEnd))) {
-                    let current_lesson = functions_js_1.default.current_lesson(lessons, json["stuff"]["timetable"][currentStudyMode]["pares"]);
-                    return bot.telegram.sendMessage(chatId, `${current_lesson}`);
-                }
-                return bot.telegram.sendMessage(chatId, 'Приносим свои извинения.\nРасписание заполнено некоректно.\nПостараемся это исправить в ближайшее время.');
-            }
-            catch (e) {
-                await handleAnError({ e, chatId });
-            }
-        })();
-        return 1;
-    }
-    else if (textLC === '/next_lesson' ||
-        (textLC.includes('следующая') && textLC.includes('пара')) ||
-        (textLC.includes('следующий') && textLC.includes('урок'))) {
-        await (async () => {
-            try {
-                if (user.users_grade === null || user.users_letter === null)
-                    return bot.telegram.sendMessage(chatId, 'Для начала установите свой класс с помощью команды /set_class');
-                let json = await (0, fs_1.readFileSync)(json_path);
-                json = await JSON.parse(json);
-                const todayDay = getTodayDay();
-                let lessons = lessonsForADay(json, [user.users_grade, user.users_letter], todayDay);
-                //currentStudyMode mode of learning(online/offline)
-                let currentStudyMode = "offline";
-                if (json["stuff"]["timetable"][currentStudyMode]["period"][0] === null && json["stuff"]["timetable"][currentStudyMode]["period"][1] === null)
-                    currentStudyMode = "online";
-                if (json["stuff"]["timetable"]["online"]["period"][0] === null && json["stuff"]["timetable"]["online"]["period"][1] === null)
-                    currentStudyMode = undefined;
-                if (!currentStudyMode)
-                    return bot.telegram.sendMessage(chatId, 'Извините, у нас нету актуального расписания.');
-                let periodStart = (0, moment_1.default)(json["stuff"]["timetable"][currentStudyMode]["period"][0], 'DD.MM.YYYY')
-                    .unix();
-                let periodEnd = (0, moment_1.default)(json["stuff"]["timetable"][currentStudyMode]["period"][1], 'DD.MM.YYYY')
-                    .unix();
-                let today = (0, moment_1.default)(todayDay, 'dddd').unix();
-                //проверяем расписание на актуальность
-                if ((Number.isNaN(periodStart) && !Number.isNaN(periodEnd) && today > periodEnd) ||
-                    (!Number.isNaN(periodStart) && !Number.isNaN(periodEnd) && !(today > periodStart && today < periodEnd)) ||
-                    (Number.isNaN(periodEnd) && !Number.isNaN(periodStart) && today < periodStart)) {
-                    if (currentStudyMode === "offline")
-                        currentStudyMode = "online";
-                    else
-                        currentStudyMode = "offline";
-                    periodStart = (0, moment_1.default)(json["stuff"]["timetable"][currentStudyMode]["period"][0], 'DD.MM.YYYY')
-                        .unix();
-                    periodEnd = (0, moment_1.default)(json["stuff"]["timetable"][currentStudyMode]["period"][1], 'DD.MM.YYYY')
-                        .unix();
-                }
-                if ((!Number.isNaN(periodEnd) && today > periodEnd) ||
-                    (!Number.isNaN(periodStart) && today < periodStart))
-                    return bot.telegram.sendMessage(chatId, 'У нас отсутствует акуальное расписание, попробуйте позже.');
-                if ((!Number.isNaN(periodEnd) && today <= periodEnd && Number.isNaN(periodStart)) ||
-                    (!Number.isNaN(periodStart) && !Number.isNaN(periodEnd) && today >= periodStart && today <= periodEnd) ||
-                    (!Number.isNaN(periodStart) && today >= periodStart && Number.isNaN(periodEnd))) {
-                    let next_lesson = functions_js_1.default.next_lesson(lessons, json["stuff"]["timetable"][currentStudyMode]["pares"]);
-                    return bot.telegram.sendMessage(chatId, `${next_lesson}`);
-                }
-                return bot.telegram.sendMessage(chatId, 'Приносим свои извинения.\nРасписание заполнено некоректно.\nПостараемся это исправить в ближайшее время.');
-            }
-            catch (e) {
-                await handleAnError({ e, chatId });
-            }
-        })();
-        return 1;
-    }
-    else if (textLC === '/count_marks') {
-        await (async () => {
-            try {
-                state = states_1.STATE_WAITING_FOR_A_GRADE;
-                user.marks = [];
-                return bot.telegram.sendMessage(chatId, 'Введите свои оценки по определённому предмету:', telegraf_1.Markup.keyboard([
-                    ['1', '2', '3'],
-                    ['4', '5']
-                ]).resize());
-            }
-            catch (e) {
-                await handleAnError({ e, chatId });
-            }
-        })();
-        return 1;
-    }
-    else if (state === states_1.STATE_WAITING_FOR_A_GRADE) {
-        await (async () => {
-            try {
-                let isGrade = false;
-                ['1', '2', '3', '4', '5'].forEach(g => {
-                    if (textLC === g)
-                        isGrade = true;
-                });
-                // case where not grade was sent
-                if (!isGrade) {
-                    state = states_1.STATE_NORMAL;
-                    return bot.telegram.sendMessage(chatId, 'Ожидалась оценка.\nПопробуйте ещё раз, используя команду /count_marks', {
-                        reply_markup: {
-                            remove_keyboard: true
-                        }
-                    });
-                }
-                // case where grade was sent
-                user.marks.push(Number(textLC));
-                let sum = user.marks.reduce((acc, next) => acc + next);
-                user.gpa = Number((sum / user.marks.length).toFixed(2));
-                let wannaUpBtn = {
-                    reply_markup: {
-                        inline_keyboard: [
-                            [{ text: 'Не устраивает', callback_data: 'wanna_up' }]
-                        ]
+            })();
+            return 1;
+        }
+        else if (textLC === '/when_school_bell' ||
+            (textLC.includes('когда') &&
+                (textLC.includes('урок') || textLC.includes('пара') || textLC.includes('звонок') || textLC.includes('перемена')))) {
+            await (async () => {
+                try {
+                    if (user.users_grade === null || user.users_letter === null) {
+                        return bot.telegram.sendMessage(chatId, 'Для начала установите свой класс с помощью команды /set_class');
                     }
-                };
-                // если средний бал выше 4.60 то некуда уже подниматься
-                if (user.gpa >= (4 + markNeed))
-                    wannaUpBtn = {
+                    let json = await (0, fs_1.readFileSync)(json_path);
+                    json = await JSON.parse(json);
+                    const todayDay = getTodayDay();
+                    //currentStudyMode mode of learning(online/offline)
+                    let currentStudyMode = "offline";
+                    if (json["stuff"]["timetable"][currentStudyMode]["period"][0] === null && json["stuff"]["timetable"][currentStudyMode]["period"][1] === null)
+                        currentStudyMode = "online";
+                    if (json["stuff"]["timetable"]["online"]["period"][0] === null && json["stuff"]["timetable"]["online"]["period"][1] === null)
+                        currentStudyMode = undefined;
+                    if (!currentStudyMode)
+                        return bot.telegram.sendMessage(chatId, 'Извините, у нас нету актуального расписания.');
+                    let periodStart = (0, moment_1.default)(json["stuff"]["timetable"][currentStudyMode]["period"][0], 'DD.MM.YYYY')
+                        .unix();
+                    let periodEnd = (0, moment_1.default)(json["stuff"]["timetable"][currentStudyMode]["period"][1], 'DD.MM.YYYY')
+                        .unix();
+                    let today = (0, moment_1.default)(todayDay, 'dddd').unix();
+                    //проверяем расписание на актуальность
+                    if ((Number.isNaN(periodStart) && !Number.isNaN(periodEnd) && today > periodEnd) ||
+                        (!Number.isNaN(periodStart) && !Number.isNaN(periodEnd) && !(today > periodStart && today < periodEnd)) ||
+                        (Number.isNaN(periodEnd) && !Number.isNaN(periodStart) && today < periodStart)) {
+                        if (currentStudyMode === "offline")
+                            currentStudyMode = "online";
+                        else
+                            currentStudyMode = "offline";
+                        periodStart = (0, moment_1.default)(json["stuff"]["timetable"][currentStudyMode]["period"][0], 'DD.MM.YYYY')
+                            .unix();
+                        periodEnd = (0, moment_1.default)(json["stuff"]["timetable"][currentStudyMode]["period"][1], 'DD.MM.YYYY')
+                            .unix();
+                    }
+                    if ((!Number.isNaN(periodEnd) && today > periodEnd) ||
+                        (!Number.isNaN(periodStart) && today < periodStart))
+                        return bot.telegram.sendMessage(chatId, 'У нас отсутствует акуальное расписание, попробуйте позже.');
+                    if ((!Number.isNaN(periodEnd) && today <= periodEnd && Number.isNaN(periodStart)) ||
+                        (!Number.isNaN(periodStart) && !Number.isNaN(periodEnd) && today >= periodStart && today <= periodEnd) ||
+                        (!Number.isNaN(periodStart) && today >= periodStart && Number.isNaN(periodEnd))) {
+                        let bell = functions_js_1.default.when_school_bell(json["classes"][user.users_grade][user.users_letter]["lessons"][todayDay], json["classes"][user.users_grade][user.users_letter]["lessons"], json["stuff"]["timetable"][currentStudyMode]["pares"]);
+                        return bot.telegram.sendMessage(chatId, bell);
+                    }
+                    return bot.telegram.sendMessage(chatId, 'Приносим свои извинения.\nРасписание заполнено некоректно.\nПостараемся это исправить в ближайшее время.');
+                }
+                catch (e) {
+                    await handleAnError({ e, chatId });
+                }
+            })();
+            return 1;
+        }
+        else if (textLC === '/timetable_today' ||
+            (textLC.includes('сегодня') && (textLC.includes('расписание') || textLC.includes('уроки') || textLC.includes('пары')))) {
+            await (async () => {
+                try {
+                    if (user.users_grade == null || user.users_letter == null)
+                        return bot.telegram.sendMessage(chatId, 'Для начала установите свой класс с помощью команды /set_class');
+                    let json = await (0, fs_1.readFileSync)(json_path);
+                    json = await JSON.parse(json);
+                    let todayDay = (0, moment_1.default)().format('dddd').toLowerCase();
+                    let timetable = lessonsForADay(json, [user.users_grade, user.users_letter], todayDay);
+                    if (timetable === null)
+                        return bot.telegram.sendMessage(chatId, 'Сегодня уроков нет.');
+                    return bot.telegram.sendMessage(chatId, `Расписание на сегодня:\n${timetable.map((el, index) => `${index + 1}. ${el}`).join('\n')}`);
+                }
+                catch (e) {
+                    await handleAnError({ e, chatId });
+                }
+            })();
+            return 1;
+        }
+        else if (textLC === '/timetable_tomorrow' ||
+            (textLC.includes('завтра') && (textLC.includes('расписание') || textLC.includes('уроки') || textLC.includes('пары')))) {
+            await (async () => {
+                try {
+                    if (user.users_grade == null || user.users_letter == null)
+                        return bot.telegram.sendMessage(chatId, 'Для начала установите свой класс с помощью команды /set_class');
+                    let json = await (0, fs_1.readFileSync)(json_path);
+                    json = await JSON.parse(json);
+                    let tomorrowDay = (0, moment_1.default)().add(1, 'days').format('dddd').toLowerCase();
+                    let timetable = lessonsForADay(json, [user.users_grade, user.users_letter], tomorrowDay);
+                    if (timetable === null)
+                        return bot.telegram.sendMessage(chatId, 'Завтра уроков нет.');
+                    return bot.telegram.sendMessage(chatId, `Расписание на завтра:\n${timetable.map((el, index) => `${index + 1}. ${el}`).join('\n')}`);
+                }
+                catch (e) {
+                    await handleAnError({ e, chatId });
+                }
+            })();
+            return 1;
+        }
+        else if (textLC === '/current_lesson' ||
+            (textLC.includes('сейчас') && (textLC.includes('пара') || textLC.includes('урок')))) {
+            await (async () => {
+                try {
+                    if (user.users_grade == null || user.users_letter == null)
+                        return bot.telegram.sendMessage(chatId, 'Для начала установите свой класс с помощью команды /set_class');
+                    let json = await (0, fs_1.readFileSync)(json_path);
+                    json = await JSON.parse(json);
+                    const todayDay = getTodayDay();
+                    let lessons = lessonsForADay(json, [user.users_grade, user.users_letter], todayDay);
+                    //currentStudyMode mode of learning(online/offline)
+                    let currentStudyMode = "offline";
+                    if (json["stuff"]["timetable"][currentStudyMode]["period"][0] === null && json["stuff"]["timetable"][currentStudyMode]["period"][1] === null)
+                        currentStudyMode = "online";
+                    if (json["stuff"]["timetable"]["online"]["period"][0] === null && json["stuff"]["timetable"]["online"]["period"][1] === null)
+                        currentStudyMode = undefined;
+                    if (!currentStudyMode)
+                        return bot.telegram.sendMessage(chatId, 'Извините, у нас нету актуального расписания.');
+                    let periodStart = (0, moment_1.default)(json["stuff"]["timetable"][currentStudyMode]["period"][0], 'DD.MM.YYYY')
+                        .unix();
+                    let periodEnd = (0, moment_1.default)(json["stuff"]["timetable"][currentStudyMode]["period"][1], 'DD.MM.YYYY')
+                        .unix();
+                    let today = (0, moment_1.default)(todayDay, 'dddd').unix();
+                    //проверяем расписание на актуальность
+                    if ((Number.isNaN(periodStart) && !Number.isNaN(periodEnd) && today > periodEnd) ||
+                        (!Number.isNaN(periodStart) && !Number.isNaN(periodEnd) && !(today > periodStart && today < periodEnd)) ||
+                        (Number.isNaN(periodEnd) && !Number.isNaN(periodStart) && today < periodStart)) {
+                        if (currentStudyMode === "offline")
+                            currentStudyMode = "online";
+                        else
+                            currentStudyMode = "offline";
+                        periodStart = (0, moment_1.default)(json["stuff"]["timetable"][currentStudyMode]["period"][0], 'DD.MM.YYYY')
+                            .unix();
+                        periodEnd = (0, moment_1.default)(json["stuff"]["timetable"][currentStudyMode]["period"][1], 'DD.MM.YYYY')
+                            .unix();
+                    }
+                    if ((!Number.isNaN(periodEnd) && today > periodEnd) ||
+                        (!Number.isNaN(periodStart) && today < periodStart))
+                        return bot.telegram.sendMessage(chatId, 'У нас отсутствует акуальное расписание, попробуйте позже.');
+                    if ((!Number.isNaN(periodEnd) && today <= periodEnd && Number.isNaN(periodStart)) ||
+                        (!Number.isNaN(periodStart) && !Number.isNaN(periodEnd) && today >= periodStart && today <= periodEnd) ||
+                        (!Number.isNaN(periodStart) && today >= periodStart && Number.isNaN(periodEnd))) {
+                        let current_lesson = functions_js_1.default.current_lesson(lessons, json["stuff"]["timetable"][currentStudyMode]["pares"]);
+                        return bot.telegram.sendMessage(chatId, `${current_lesson}`);
+                    }
+                    return bot.telegram.sendMessage(chatId, 'Приносим свои извинения.\nРасписание заполнено некоректно.\nПостараемся это исправить в ближайшее время.');
+                }
+                catch (e) {
+                    await handleAnError({ e, chatId });
+                }
+            })();
+            return 1;
+        }
+        else if (textLC === '/next_lesson' ||
+            (textLC.includes('следующая') && textLC.includes('пара')) ||
+            (textLC.includes('следующий') && textLC.includes('урок'))) {
+            await (async () => {
+                try {
+                    if (user.users_grade === null || user.users_letter === null)
+                        return bot.telegram.sendMessage(chatId, 'Для начала установите свой класс с помощью команды /set_class');
+                    let json = await (0, fs_1.readFileSync)(json_path);
+                    json = await JSON.parse(json);
+                    const todayDay = getTodayDay();
+                    let lessons = lessonsForADay(json, [user.users_grade, user.users_letter], todayDay);
+                    //currentStudyMode mode of learning(online/offline)
+                    let currentStudyMode = "offline";
+                    if (json["stuff"]["timetable"][currentStudyMode]["period"][0] === null && json["stuff"]["timetable"][currentStudyMode]["period"][1] === null)
+                        currentStudyMode = "online";
+                    if (json["stuff"]["timetable"]["online"]["period"][0] === null && json["stuff"]["timetable"]["online"]["period"][1] === null)
+                        currentStudyMode = undefined;
+                    if (!currentStudyMode)
+                        return bot.telegram.sendMessage(chatId, 'Извините, у нас нету актуального расписания.');
+                    let periodStart = (0, moment_1.default)(json["stuff"]["timetable"][currentStudyMode]["period"][0], 'DD.MM.YYYY')
+                        .unix();
+                    let periodEnd = (0, moment_1.default)(json["stuff"]["timetable"][currentStudyMode]["period"][1], 'DD.MM.YYYY')
+                        .unix();
+                    let today = (0, moment_1.default)(todayDay, 'dddd').unix();
+                    //проверяем расписание на актуальность
+                    if ((Number.isNaN(periodStart) && !Number.isNaN(periodEnd) && today > periodEnd) ||
+                        (!Number.isNaN(periodStart) && !Number.isNaN(periodEnd) && !(today > periodStart && today < periodEnd)) ||
+                        (Number.isNaN(periodEnd) && !Number.isNaN(periodStart) && today < periodStart)) {
+                        if (currentStudyMode === "offline")
+                            currentStudyMode = "online";
+                        else
+                            currentStudyMode = "offline";
+                        periodStart = (0, moment_1.default)(json["stuff"]["timetable"][currentStudyMode]["period"][0], 'DD.MM.YYYY')
+                            .unix();
+                        periodEnd = (0, moment_1.default)(json["stuff"]["timetable"][currentStudyMode]["period"][1], 'DD.MM.YYYY')
+                            .unix();
+                    }
+                    if ((!Number.isNaN(periodEnd) && today > periodEnd) ||
+                        (!Number.isNaN(periodStart) && today < periodStart))
+                        return bot.telegram.sendMessage(chatId, 'У нас отсутствует акуальное расписание, попробуйте позже.');
+                    if ((!Number.isNaN(periodEnd) && today <= periodEnd && Number.isNaN(periodStart)) ||
+                        (!Number.isNaN(periodStart) && !Number.isNaN(periodEnd) && today >= periodStart && today <= periodEnd) ||
+                        (!Number.isNaN(periodStart) && today >= periodStart && Number.isNaN(periodEnd))) {
+                        let next_lesson = functions_js_1.default.next_lesson(lessons, json["stuff"]["timetable"][currentStudyMode]["pares"]);
+                        return bot.telegram.sendMessage(chatId, `${next_lesson}`);
+                    }
+                    return bot.telegram.sendMessage(chatId, 'Приносим свои извинения.\nРасписание заполнено некоректно.\nПостараемся это исправить в ближайшее время.');
+                }
+                catch (e) {
+                    await handleAnError({ e, chatId });
+                }
+            })();
+            return 1;
+        }
+        else if (textLC === '/count_marks') {
+            await (async () => {
+                try {
+                    state = states_1.STATE_WAITING_FOR_A_GRADE;
+                    user.marks = [];
+                    return bot.telegram.sendMessage(chatId, 'Введите свои оценки по определённому предмету:', telegraf_1.Markup.keyboard([
+                        ['1', '2', '3'],
+                        ['4', '5']
+                    ]).resize());
+                }
+                catch (e) {
+                    await handleAnError({ e, chatId });
+                }
+            })();
+            return 1;
+        }
+        else if (state === states_1.STATE_WAITING_FOR_A_GRADE) {
+            await (async () => {
+                try {
+                    let isGrade = false;
+                    ['1', '2', '3', '4', '5'].forEach(g => {
+                        if (textLC === g)
+                            isGrade = true;
+                    });
+                    // case where not grade was sent
+                    if (!isGrade) {
+                        state = states_1.STATE_NORMAL;
+                        return bot.telegram.sendMessage(chatId, 'Ожидалась оценка.\nПопробуйте ещё раз, используя команду /count_marks', {
+                            reply_markup: {
+                                remove_keyboard: true
+                            }
+                        });
+                    }
+                    // case where grade was sent
+                    user.marks.push(Number(textLC));
+                    let sum = user.marks.reduce((acc, next) => acc + next);
+                    user.gpa = Number((sum / user.marks.length).toFixed(2));
+                    let wannaUpBtn = {
                         reply_markup: {
                             inline_keyboard: [
-                                []
+                                [{ text: 'Не устраивает', callback_data: 'wanna_up' }]
                             ]
                         }
                     };
-                await bot.telegram.sendMessage(chatId, `Ваши оценки: ${user.marks.join(', ')}\nВаш средний бал: ${user.gpa}`, wannaUpBtn);
-            }
-            catch (e) {
-                state = states_1.STATE_NORMAL;
-                await handleAnError({ e, chatId });
-            }
-        })();
-        return 1;
+                    // если средний бал выше 4.60 то некуда уже подниматься
+                    if (user.gpa >= (4 + markNeed))
+                        wannaUpBtn = {
+                            reply_markup: {
+                                inline_keyboard: [
+                                    []
+                                ]
+                            }
+                        };
+                    await bot.telegram.sendMessage(chatId, `Ваши оценки: ${user.marks.join(', ')}\nВаш средний бал: ${user.gpa}`, wannaUpBtn);
+                }
+                catch (e) {
+                    state = states_1.STATE_NORMAL;
+                    await handleAnError({ e, chatId });
+                }
+            })();
+            return 1;
+        }
+        else if (textLC === '/events') {
+            await (async () => {
+                try {
+                    let json = (0, fs_1.readFileSync)(json_path);
+                    json = await JSON.parse(json);
+                    let events = json["stuff"]["events"];
+                    await (async () => {
+                        for (let i = 0; i < events.length; i++) {
+                            await bot.telegram.sendMessage(chatId, events[i]);
+                        }
+                    })();
+                    return 1;
+                }
+                catch (e) {
+                    await handleAnError({ e, chatId });
+                }
+            })();
+            return 1;
+        }
+        return bot.telegram.sendMessage(chatId, `Я вас не понимаю.`);
     }
-    else if (textLC === '/events') {
-        await (async () => {
-            try {
-                let json = (0, fs_1.readFileSync)(json_path);
-                json = await JSON.parse(json);
-                let events = json["stuff"]["events"];
-                await (async () => {
-                    for (let i = 0; i < events.length; i++) {
-                        await bot.telegram.sendMessage(chatId, events[i]);
-                    }
-                })();
-                return 1;
-            }
-            catch (e) {
-                await handleAnError({ e, chatId });
-            }
-        })();
-        return 1;
+    catch (e) {
+        console.error(e);
     }
-    return bot.telegram.sendMessage(chatId, `Я вас не понимаю.`);
 });
 bot.on('callback_query', async (msg) => {
     //@ts-ignore
