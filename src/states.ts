@@ -1,0 +1,2 @@
+export const STATE_NORMAL: string = 'STATE_NORMAL'
+export const STATE_WAITING_FOR_A_GRADE: string = 'STATE_WAITING_FOR_A_GRADE'

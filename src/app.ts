@@ -1,9 +1,12 @@
-import {Telegraf} from 'telegraf';
+import {Telegraf, Markup} from 'telegraf';
 import functions from './functions.js';
 import moment from "moment";
 import {readFileSync} from "fs";
 import {User, ErrorAction, IMarkup, MarkupItem} from "./declaration/interfaces";
-import {Events, StudyMode, TimetableForDay} from "./declaration/types";
+import {State, Events, StudyMode, TimetableForDay} from "./declaration/types";
+import {STATE_NORMAL, STATE_WAITING_FOR_A_GRADE} from './states'
+
+let state: State = STATE_NORMAL
 
 //path relative to the app
 let prtta: string = './';
@@ -35,11 +38,11 @@ function handleAnError(action: ErrorAction) {
 
 function lessonsForADay(json: any, classData: [number, string], day: string): TimetableForDay {
     return json
-            ["classes"]
-            [classData[0]]
-            [classData[1]]
-            ["lessons"]
-            [day]
+        ["classes"]
+        [classData[0]]
+        [classData[1]]
+        ["lessons"]
+        [day]
 }
 
 function getTodayDay(): string {
@@ -64,8 +67,7 @@ function takeUser(id: number) {
             users_grade: null,
             gpa: undefined,
             wannaVariants: undefined,
-            marks: [],
-            marksMgsId: undefined
+            marks: []
         }
         index = users.length;
 
@@ -75,21 +77,6 @@ function takeUser(id: number) {
     return response;
 }
 
-const marks_keys: IMarkup = {
-    reply_markup: {
-        inline_keyboard: [
-            [
-                {text: '1', callback_data: 'mark1'},
-                {text: '2', callback_data: 'mark2'}
-            ],
-            [
-                {text: '3', callback_data: 'mark3'},
-                {text: '4', callback_data: 'mark4'},
-                {text: '5', callback_data: 'mark5'}
-            ]
-        ]
-    }
-};
 const markNeed: number = 0.60;
 const class_letter_keys: IMarkup = {
     reply_markup: {
@@ -436,9 +423,62 @@ bot.on('message', async ctx => {
     ) {
         await (async () => {
             try {
+                state = STATE_WAITING_FOR_A_GRADE
                 user.marks = [];
-                return bot.telegram.sendMessage(chatId, 'Введите свои оценки по определённому предмету:', marks_keys)
+                return bot.telegram.sendMessage(chatId, 'Введите свои оценки по определённому предмету:',
+                    Markup.keyboard([
+                        ['1', '2', '3'],
+                        ['4', '5']
+                    ]).resize())
             } catch (e) {
+                await handleAnError({e, chatId})
+            }
+        })()
+        return 1;
+    } else if (state === STATE_WAITING_FOR_A_GRADE) {
+        await (async () => {
+            try {
+                let isGrade: boolean = false;
+                ['1', '2', '3', '4', '5'].forEach(g => {
+                    if (textLC === g)
+                        isGrade = true
+                })
+                // case where not grade was sent
+                if (!isGrade) {
+                    state = STATE_NORMAL
+                    return bot.telegram.sendMessage(chatId, 'Ожидалась оценка.\nПопробуйте ещё раз, используя команду /count_marks', {
+                        reply_markup: {
+                            remove_keyboard: true
+                        }
+                    })
+                }
+                // case where grade was sent
+                user.marks.push(Number(textLC))
+                let sum: number = user.marks.reduce((acc, next) => acc + next);
+                user.gpa = Number((sum / user.marks.length).toFixed(2));
+                let wannaUpBtn: IMarkup = {
+                    reply_markup: {
+                        inline_keyboard: [
+                            [{text: 'Не устраивает', callback_data: 'wanna_up'}]
+                        ]
+                    }
+                };
+                // если средний бал выше 4.60 то некуда уже подниматься
+                if (user.gpa >= (4 + markNeed))
+                    wannaUpBtn = {
+                        reply_markup: {
+                            inline_keyboard: [
+                                []
+                            ]
+                        }
+                    };
+                await bot.telegram.sendMessage(
+                    chatId,
+                    `Ваши оценки: ${user.marks.join(', ')}\nВаш средний бал: ${user.gpa}`,
+                    wannaUpBtn
+                )
+            } catch (e) {
+                state = STATE_NORMAL
                 await handleAnError({e, chatId})
             }
         })()
@@ -476,57 +516,7 @@ bot.on('callback_query', async msg => {
     const newUserData: [number, boolean] = takeUser(msg.from.id);
     const user: User = users[newUserData[0]];
 
-    // если ввел оценку - добавляем в массив
-    if (['mark1', 'mark2', 'mark3', 'mark4', 'mark5'].includes(data)) {
-        await (async () => {
-            try {
-                //добавляем оценку
-                user.marks.push(Number(data.charAt(data.length - 1)));
-
-                let sum: number = user.marks.reduce((acc, next) => acc + next);
-                user.gpa = Number( (sum / user.marks.length).toFixed(2) );
-                let wannaUpBtn: IMarkup = {
-                    reply_markup: {
-                        inline_keyboard: [
-                            [{text: 'Не устраивает', callback_data: 'wanna_up'}]
-                        ]
-                    }
-                };
-                // если средний бал выше 4.60 то некуда уже подниматься
-                if (user.gpa >= (4 + markNeed))
-                    wannaUpBtn = {
-                        reply_markup: {
-                            inline_keyboard: [
-                                []
-                            ]
-                        }
-                    };
-
-                //если это первая вводимая оценка - просто выводим ее
-                if (user.marks[1] === undefined) {
-                    await bot.telegram.sendMessage(
-                        chatId,
-                        `Ваши оценки: ${user.marks.join(', ')}\nВаш средний бал: ${user.gpa}`,
-                        wannaUpBtn
-                    )
-                        .then((msgInfo) => {
-                            user.marksMgsId = msgInfo.message_id
-                        })
-                }
-                // либо редактируем уже имеющееся сообщение
-                else
-                    await bot.telegram.editMessageText(
-                        chatId,
-                        user.marksMgsId,
-                        undefined,
-                        `Ваши оценки: ${user.marks.join(', ')}\nВаш средний бал: ${user.gpa}`,
-                        wannaUpBtn
-                    )
-            } catch (e) {
-                await handleAnError({e, chatId})
-            }
-        })()
-    } else if (data === 'wanna_up') {
+    if (data === 'wanna_up') {
         await (async () => {
             try {
                 //если нажал на кнопку "не устраивает"
@@ -535,13 +525,16 @@ bot.on('callback_query', async msg => {
                 //если оценка 3.79 -> предлагаем 5 потому что у него уже есть 4ка
                 if (user.gpa !== undefined && Math.floor(user.gpa) === Math.floor(user.gpa - markNeed))
                     min = Math.floor(user.gpa) + 2
-                else if(user.gpa !== undefined)
+                else if (user.gpa !== undefined)
                     min = Math.floor(user.gpa) + 1;
                 user.wannaVariants = [];
                 for (let i: number = min; i <= 5; i++) {
                     user.wannaVariants.push(i);
                 }
-                let wannaButtons: MarkupItem[] = user.wannaVariants.map(el => ({text: String(el), callback_data: `wanna_${el}`}));
+                let wannaButtons: MarkupItem[] = user.wannaVariants.map(el => ({
+                    text: String(el),
+                    callback_data: `wanna_${el}`
+                }));
                 await bot.telegram.sendMessage(chatId, 'Какую оценку вы хотите иметь?', {
                     reply_markup: {
                         inline_keyboard: [
@@ -553,18 +546,18 @@ bot.on('callback_query', async msg => {
                 await handleAnError({e, chatId})
             }
         })()
-    } else if (data.includes('wanna_')) {
+    } else if (data.includes('wanna_') && data !== 'wanna_up') {
         await (async () => {
             try {
                 //если выбрал какую оценку хочет к примеру 4
-                const chosenMark: number = Number( data.charAt(data.length - 1) );
+                const chosenMark: number = Number(data.charAt(data.length - 1));
                 //chosenMark = 4
                 const wannaValue: number = chosenMark - (1 - markNeed);
                 //wannaValue = 3,60
                 let min: number = -1;
                 if (user.gpa !== undefined && Math.floor(user.gpa) === Math.floor(user.gpa - markNeed))
                     min = Math.floor(user.gpa) + 2
-                else if(user.gpa !== undefined)
+                else if (user.gpa !== undefined)
                     min = Math.floor(user.gpa) + 1;
                 let need: any = {};
                 //пробуем все оценки которые ему могут помочь
@@ -593,7 +586,11 @@ bot.on('callback_query', async msg => {
                     else
                         needStr += ` или ${Object.values(need)[i]} "${Object.keys(need)[i]}"`;
                 }
-                await bot.telegram.sendMessage(chatId, `Для этого вам нужно получить ${needStr}`)
+                await bot.telegram.sendMessage(chatId, `Для этого вам нужно получить ${needStr}`, {
+                    reply_markup: {
+                        remove_keyboard: true
+                    }
+                })
             } catch (e) {
                 await handleAnError({e, chatId})
             }
