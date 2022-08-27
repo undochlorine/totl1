@@ -492,9 +492,16 @@ bot.on('message', async ctx => {
                     let json: any = readFileSync(json_path);
                     json = await JSON.parse(json);
                     let events: Events = json["stuff"]["events"];
+                    function showEvent(event: string, timeout: number) {
+                        return new Promise(r => {
+                            setTimeout(() => {
+                                r(bot.telegram.sendMessage(chatId, event))
+                            }, timeout)
+                        })
+                    }
                     await (async () => {
                         for (let i: number = 0; i < events.length; i++) {
-                            await bot.telegram.sendMessage(chatId, events[i]);
+                            await showEvent(events[i], i === 0 ? 0 : 700)
                         }
                     })()
                     return 1;
