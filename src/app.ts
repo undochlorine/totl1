@@ -2,7 +2,7 @@ import {Telegraf} from 'telegraf';
 import functions from './functions.js';
 import moment from "moment";
 import {readFileSync} from "fs";
-import {User, ErrorAction, Markup, MarkupItem} from "./declaration/interfaces";
+import {User, ErrorAction, IMarkup, MarkupItem} from "./declaration/interfaces";
 import {Events, StudyMode, TimetableForDay} from "./declaration/types";
 
 //path relative to the app
@@ -75,7 +75,7 @@ function takeUser(id: number) {
     return response;
 }
 
-const marks_keys: Markup = {
+const marks_keys: IMarkup = {
     reply_markup: {
         inline_keyboard: [
             [
@@ -91,7 +91,7 @@ const marks_keys: Markup = {
     }
 };
 const markNeed: number = 0.60;
-const class_letter_keys: Markup = {
+const class_letter_keys: IMarkup = {
     reply_markup: {
         inline_keyboard: [
             [
@@ -107,7 +107,7 @@ const class_letter_keys: Markup = {
         ]
     }
 }
-const class_grade_keys: Markup = {
+const class_grade_keys: IMarkup = {
     reply_markup: {
         inline_keyboard: [
             [
@@ -485,7 +485,7 @@ bot.on('callback_query', async msg => {
 
                 let sum: number = user.marks.reduce((acc, next) => acc + next);
                 user.gpa = Number( (sum / user.marks.length).toFixed(2) );
-                let wannaUpBtn: Markup = {
+                let wannaUpBtn: IMarkup = {
                     reply_markup: {
                         inline_keyboard: [
                             [{text: 'Не устраивает', callback_data: 'wanna_up'}]

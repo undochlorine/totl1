@@ -29,6 +29,6 @@ export interface MarkupItem {
 export interface ReplyMarkup {
     inline_keyboard: InlineKeyboard
 }
-export interface Markup {
+export interface IMarkup {
     reply_markup: ReplyMarkup
 }
