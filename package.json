@@ -4,9 +4,9 @@
   "description": "",
   "main": "src/functions.ts",
   "scripts": {
+    "start": "node public/app.js",
     "compile": "tsc",
-    "devStart": "nodemon public/app.js",
-    "prodStart": "node public/app.js"
+    "devStart": "nodemon public/app.js"
   },
   "repository": {
     "type": "git",
