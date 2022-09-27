@@ -117,8 +117,13 @@ bot.telegram.setMyCommands([
     {command: '/timetable_today', description: 'Расписание на сегодня.'},
     {command: '/timetable_tomorrow', description: 'Расписание на завтра.'},
     {command: '/count_marks', description: 'Узнать средний бал.'},
-    {command: '/events', description: 'Последние события в лицее и в мире.'}
+    {command: '/events', description: 'Последние события в лицее и в мире.'},
+    {command: '/feedback', description: 'Обратная связь'}
 ]);
+
+bot.command('feedback', async ctx => {
+    await bot.telegram.sendMessage(ctx.chat.id, 'По вопросам и для обратной связи писать:\nhttps://t.me/jastnaim')
+})
 
 bot.on('message', async ctx => {
     try {
@@ -129,8 +134,13 @@ bot.on('message', async ctx => {
         const newUserData: [number, boolean] = takeUser(ctx.from.id);
         const user: User = users[newUserData[0]];
         const newUser: boolean = newUserData[1];
-        if (newUser)
-            console.log(`${user.nth}. ${ctx.from.first_name} ${ctx.from.last_name}`);
+        if (newUser) {
+            let label = `${user.nth}. ${ctx.from.first_name} ${ctx.from.last_name}`;
+            for (let i = label.length; i <= 75; i++) {
+                label += ' ';
+            }
+            console.log(`${label}${moment().format('DD.MM.YYYY hh:mm')}`);
+        }
 
         if (textLC === '/start') {
             await (async () => {
