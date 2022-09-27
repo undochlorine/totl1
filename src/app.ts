@@ -67,7 +67,8 @@ function takeUser(id: number) {
             users_grade: null,
             gpa: undefined,
             wannaVariants: undefined,
-            marks: []
+            marks: [],
+            nth: users.length+1
         }
         index = users.length;
 
@@ -129,7 +130,7 @@ bot.on('message', async ctx => {
         const user: User = users[newUserData[0]];
         const newUser: boolean = newUserData[1];
         if (newUser)
-            console.log(ctx.from.first_name, ctx.from.last_name);
+            console.log(`${user.nth}. ${ctx.from.first_name} ${ctx.from.last_name}`);
 
         if (textLC === '/start') {
             await (async () => {

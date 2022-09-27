@@ -15,7 +15,8 @@ export interface User {
     users_grade: null | number,
     gpa: undefined | number,
     wannaVariants: undefined | number[],
-    marks: number[]
+    marks: number[],
+    nth: number
 }
 export interface ErrorAction {
     chatId: number,
