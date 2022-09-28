@@ -429,7 +429,8 @@ bot.on('message', async (ctx) => {
                     }
                     await (async () => {
                         for (let i = 0; i < events.length; i++) {
-                            await showEvent(events[i], i === 0 ? 0 : 700);
+                            // await showEvent(events[i], i === 0 ? 0 : 700)
+                            await showEvent(events[i], 0);
                         }
                     })();
                     return 1;
