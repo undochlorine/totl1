@@ -5,6 +5,7 @@ import {readFileSync} from "fs";
 import {User, ErrorAction, IMarkup, MarkupItem} from "./declaration/interfaces";
 import {State, Events, StudyMode, TimetableForDay} from "./declaration/types";
 import {STATE_NORMAL, STATE_WAITING_FOR_A_GRADE} from './states'
+import stickers from "./stickers";
 
 let state: State = STATE_NORMAL
 
@@ -20,7 +21,7 @@ let prtta: string = './';
 })()
 let json_path: string = `${prtta}fake_json/lyceum.json`;
 
-const security: any = JSON.parse(readFileSync(`${prtta}private/security.json`).toString())
+const security: any = JSON.parse(readFileSync(`${prtta}security.json`).toString())
 
 const bot = new Telegraf(security["TELEGRAM_BOT_TOKEN"]);
 
@@ -47,6 +48,9 @@ function lessonsForADay(json: any, classData: [number, string], day: string): Ti
 
 function getTodayDay(): string {
     return moment().format('dddd').toLowerCase();
+}
+async function finishClassRecieving(chatId: any): Promise<any> {
+    await bot.telegram.sendSticker(chatId, stickers.potterHat)
 }
 
 function takeUser(id: number) {
@@ -522,6 +526,16 @@ bot.on('message', async ctx => {
                 }
             })()
             return 1;
+        } else if(textLC === 'не спишь?') {
+            await (async () => {
+                try {
+                    await bot.telegram.sendMessage(chatId, 'Если бы...')
+                    await bot.telegram.sendSticker(chatId, stickers.insomnia)
+                } catch(e) {
+                    await handleAnError({e, chatId})
+                }
+            })()
+            return 1;
         }
 
         return bot.telegram.sendMessage(chatId, `Я вас не понимаю.`);
@@ -627,8 +641,11 @@ bot.on('callback_query', async msg => {
                     user.users_grade = 11
                 else if (user.users_grade === 0)
                     user.users_grade = 10;
-                if (user.users_letter !== null)
-                    return bot.telegram.sendMessage(chatId, `Ваш класс: ${user.users_grade}-${user.users_letter.toUpperCase()}`)
+                if (user.users_letter !== null) {
+                    await bot.telegram.sendMessage(chatId, `Ваш класс: ${user.users_grade}-${user.users_letter.toUpperCase()}`)
+                    await finishClassRecieving(chatId)
+                    return 1;
+                }
                 return bot.telegram.sendMessage(chatId, 'Буква вашего класса:', class_letter_keys)
             } catch (e) {
                 await handleAnError({e, chatId})
@@ -638,8 +655,11 @@ bot.on('callback_query', async msg => {
         await (async () => {
             try {
                 user.users_letter = data.charAt(data.length - 1).toLowerCase();
-                if (user.users_grade !== null)
-                    return bot.telegram.sendMessage(chatId, `Ваш класс: ${user.users_grade}-${user.users_letter.toUpperCase()}`)
+                if (user.users_grade !== null) {
+                    await bot.telegram.sendMessage(chatId, `Ваш класс: ${user.users_grade}-${user.users_letter.toUpperCase()}`)
+                    await finishClassRecieving(chatId)
+                    return 1;
+                }
                 return bot.telegram.sendMessage(chatId, `В каком вы классе?`, class_grade_keys)
             } catch (e) {
                 await handleAnError({e, chatId})

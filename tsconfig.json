@@ -102,6 +102,7 @@
   },
   "include": [
     "./src/app.ts",
-    "./src/functions.ts"
+    "./src/functions.ts",
+    "./src/stickers.ts"
   ]
 }
