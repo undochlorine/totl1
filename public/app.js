@@ -1,4 +1,27 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -9,6 +32,8 @@ const moment_1 = __importDefault(require("moment"));
 const fs_1 = require("fs");
 const states_1 = require("./states");
 const stickers_1 = __importDefault(require("./stickers"));
+const dotenv = __importStar(require("dotenv"));
+dotenv.config();
 let state = states_1.STATE_NORMAL;
 //path relative to the app
 let prtta = './';
@@ -22,8 +47,7 @@ let prtta = './';
     }
 })();
 let json_path = `${prtta}fake_json/lyceum.json`;
-const security = JSON.parse((0, fs_1.readFileSync)(`${prtta}security.json`).toString());
-const bot = new telegraf_1.Telegraf(security["TELEGRAM_BOT_TOKEN"]);
+const bot = new telegraf_1.Telegraf(process.env.TELEGRAM_BOT_TOKEN || '');
 const users = [];
 function handleAnError(action) {
     console.log(action.e);

@@ -6,6 +6,8 @@ import {User, ErrorAction, IMarkup, MarkupItem} from "./declaration/interfaces";
 import {State, Events, StudyMode, TimetableForDay} from "./declaration/types";
 import {STATE_NORMAL, STATE_WAITING_FOR_A_GRADE} from './states'
 import stickers from "./stickers";
+import * as dotenv from 'dotenv'
+dotenv.config()
 
 let state: State = STATE_NORMAL
 
@@ -21,9 +23,7 @@ let prtta: string = './';
 })()
 let json_path: string = `${prtta}fake_json/lyceum.json`;
 
-const security: any = JSON.parse(readFileSync(`${prtta}security.json`).toString())
-
-const bot = new Telegraf(security["TELEGRAM_BOT_TOKEN"]);
+const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN || '');
 
 const users: User[] = [];
 
