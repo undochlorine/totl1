@@ -1,6 +1,8 @@
-import moment from "moment";
+import moment from "moment-timezone";
 import {Week} from "./declaration/interfaces";
 import {TimetableForDay} from "./declaration/types";
+
+moment.tz.setDefault('Europe/Chisinau')
 
 function when_school_bell(
         pares: TimetableForDay,

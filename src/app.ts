@@ -1,12 +1,14 @@
 import {Telegraf, Markup} from 'telegraf';
 import functions from './functions.js';
-import moment from "moment";
+import moment from "moment-timezone";
 import {readFileSync} from "fs";
 import {User, ErrorAction, IMarkup, MarkupItem} from "./declaration/interfaces";
 import {State, Events, StudyMode, TimetableForDay} from "./declaration/types";
 import {STATE_NORMAL, STATE_WAITING_FOR_A_GRADE} from './states'
 import stickers from "./stickers";
 import * as dotenv from 'dotenv'
+
+moment.tz.setDefault('Europe/Chisinau')
 dotenv.config()
 
 let state: State = STATE_NORMAL
