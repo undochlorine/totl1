@@ -672,4 +672,9 @@ bot.on('callback_query', async msg => {
     return 1;
 });
 
-bot.launch();
+bot.launch({
+    webhook: {
+        domain: process.env.WEBHOOK_URL,
+        port: Number(process.env.PORT) || 3000
+    }
+});
