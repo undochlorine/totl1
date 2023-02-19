@@ -35,6 +35,7 @@ const stickers_1 = __importDefault(require("./stickers"));
 const dotenv = __importStar(require("dotenv"));
 moment_timezone_1.default.tz.setDefault('Europe/Chisinau');
 dotenv.config();
+const port = Number(process.env.PORT) || 3000;
 let state = states_1.STATE_NORMAL;
 //path relative to the app
 let prtta = './';
@@ -621,6 +622,6 @@ bot.on('callback_query', async (msg) => {
 bot.launch({
     webhook: {
         domain: process.env.WEBHOOK_URL,
-        port: Number(process.env.PORT) || 3000
+        port: port
     }
 });
