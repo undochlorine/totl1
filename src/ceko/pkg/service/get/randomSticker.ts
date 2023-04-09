@@ -18,6 +18,6 @@ function RandomSticker(): string {
 	return stickersData.Stickers[i];
 }
 
-export {
+export default {
 	RandomSticker
 }
