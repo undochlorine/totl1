@@ -783,29 +783,22 @@ bot.on('callback_query', async msg => {
                             if (isNaN(requestingBlockIndex)) {
                                 console.log("wrong task request")
                             } else {
-                                let cekoData: any;
-
                                 const jsonPath = path.resolve(__dirname, "../src/ceko/assets/ceko/tasks.json")
-                                readFile(jsonPath, 'utf-8', (err, data) => {
-                                    if (err) {
-                                        console.error("failed to read data of tasks");
-                                        console.log(err)
-                                        return;
+
+                                let cekoData: any = readFileSync(jsonPath, 'utf-8');
+                                cekoData = await JSON.parse(cekoData)
+                                handle.TaskQuery(
+                                    botUrl,
+                                    chatId,
+                                    "math;",
+                                    deepData,
+                                    requestingBlock + ";",
+                                    cekoData.MathBlocks[Object.keys(cekoData.MathBlocks)[requestingBlockIndex-1]]
+                                ).then(er => {
+                                    if (er !== "") {
+                                        console.log(er)
                                     }
-                                    cekoData = JSON.parse(data);
-                                    handle.TaskQuery(
-                                        botUrl,
-                                        chatId,
-                                        "math;",
-                                        deepData,
-                                        requestingBlock + ";",
-                                        cekoData.MathBlocks[Object.keys(cekoData.MathBlocks)[requestingBlockIndex-1]]
-                                    ).then(er => {
-                                        if (er !== "") {
-                                            console.log(err)
-                                        }
-                                    })
-                                });
+                                })
                             }
                         }
                     }
