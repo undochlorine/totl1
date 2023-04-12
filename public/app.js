@@ -40,7 +40,6 @@ const randomSticker_1 = __importDefault(require("./ceko/pkg/service/get/randomSt
 moment_timezone_1.default.tz.setDefault('Europe/Chisinau');
 dotenv.config();
 const port = Number(process.env.PORT) || 3000;
-let state = states_1.STATE_NORMAL;
 //path relative to the app
 let prtta = './';
 (() => {
@@ -93,7 +92,8 @@ function takeUser(id) {
             gpa: undefined,
             wannaVariants: undefined,
             marks: [],
-            nth: users.length + 1
+            nth: users.length + 1,
+            state: states_1.STATE_NORMAL
         };
         index = users.length;
         users.push(user);
@@ -395,7 +395,7 @@ bot.on('message', async (ctx) => {
         else if (textLC === '/count_marks') {
             await (async () => {
                 try {
-                    state = states_1.STATE_WAITING_FOR_A_GRADE;
+                    user.state = states_1.STATE_WAITING_FOR_A_GRADE;
                     user.marks = [];
                     return bot.telegram.sendMessage(chatId, 'Введите свои оценки по определённому предмету:', telegraf_1.Markup.keyboard([
                         ['1', '2', '3'],
@@ -408,7 +408,7 @@ bot.on('message', async (ctx) => {
             })();
             return 1;
         }
-        else if (state === states_1.STATE_WAITING_FOR_A_GRADE) {
+        else if (user.state === states_1.STATE_WAITING_FOR_A_GRADE) {
             await (async () => {
                 try {
                     let isGrade = false;
@@ -418,7 +418,7 @@ bot.on('message', async (ctx) => {
                     });
                     // case where not grade was sent
                     if (!isGrade) {
-                        state = states_1.STATE_NORMAL;
+                        user.state = states_1.STATE_NORMAL;
                         return bot.telegram.sendMessage(chatId, 'Ожидалась оценка.\nПопробуйте ещё раз, используя команду /count_marks', {
                             reply_markup: {
                                 remove_keyboard: true
@@ -448,7 +448,7 @@ bot.on('message', async (ctx) => {
                     await bot.telegram.sendMessage(chatId, `Ваши оценки: ${user.marks.join(', ')}\nВаш средний бал: ${user.gpa}`, wannaUpBtn);
                 }
                 catch (e) {
-                    state = states_1.STATE_NORMAL;
+                    user.state = states_1.STATE_NORMAL;
                     await handleAnError({ e, chatId });
                 }
             })();
@@ -534,7 +534,7 @@ bot.on('callback_query', async (msg) => {
         await (async () => {
             try {
                 //если нажал на кнопку "не устраивает"
-                state = states_1.STATE_NORMAL;
+                user.state = states_1.STATE_NORMAL;
                 let min = -1;
                 //если оценка 3.22 -> предлагаем 4, 5
                 //если оценка 3.79 -> предлагаем 5 потому что у него уже есть 4ка
