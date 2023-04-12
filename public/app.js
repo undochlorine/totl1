@@ -723,20 +723,13 @@ bot.on('callback_query', async (msg) => {
                                 console.log("wrong task request");
                             }
                             else {
-                                let cekoData;
                                 const jsonPath = path_1.default.resolve(__dirname, "../src/ceko/assets/ceko/tasks.json");
-                                (0, fs_1.readFile)(jsonPath, 'utf-8', (err, data) => {
-                                    if (err) {
-                                        console.error("failed to read data of tasks");
-                                        console.log(err);
-                                        return;
+                                let cekoData = (0, fs_1.readFileSync)(jsonPath, 'utf-8');
+                                cekoData = await JSON.parse(cekoData);
+                                handle_1.default.TaskQuery(botUrl, chatId, "math;", deepData, requestingBlock + ";", cekoData.MathBlocks[Object.keys(cekoData.MathBlocks)[requestingBlockIndex - 1]]).then(er => {
+                                    if (er !== "") {
+                                        console.log(er);
                                     }
-                                    cekoData = JSON.parse(data);
-                                    handle_1.default.TaskQuery(botUrl, chatId, "math;", deepData, requestingBlock + ";", cekoData.MathBlocks[Object.keys(cekoData.MathBlocks)[requestingBlockIndex - 1]]).then(er => {
-                                        if (er !== "") {
-                                            console.log(err);
-                                        }
-                                    });
                                 });
                             }
                         }
