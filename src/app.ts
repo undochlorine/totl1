@@ -17,8 +17,6 @@ dotenv.config()
 
 const port = Number(process.env.PORT) || 3000
 
-let state: State = STATE_NORMAL
-
 //path relative to the app
 let prtta: string = './';
 (() => {
@@ -83,7 +81,8 @@ function takeUser(id: number) {
             gpa: undefined,
             wannaVariants: undefined,
             marks: [],
-            nth: users.length+1
+            nth: users.length + 1,
+            state: STATE_NORMAL
         }
         index = users.length;
 
@@ -455,7 +454,7 @@ bot.on('message', async ctx => {
         ) {
             await (async () => {
                 try {
-                    state = STATE_WAITING_FOR_A_GRADE
+                    user.state = STATE_WAITING_FOR_A_GRADE
                     user.marks = [];
                     return bot.telegram.sendMessage(chatId, 'Введите свои оценки по определённому предмету:',
                         Markup.keyboard([
@@ -467,7 +466,7 @@ bot.on('message', async ctx => {
                 }
             })()
             return 1;
-        } else if (state === STATE_WAITING_FOR_A_GRADE) {
+        } else if (user.state === STATE_WAITING_FOR_A_GRADE) {
             await (async () => {
                 try {
                     let isGrade: boolean = false;
@@ -477,7 +476,7 @@ bot.on('message', async ctx => {
                     })
                     // case where not grade was sent
                     if (!isGrade) {
-                        state = STATE_NORMAL
+                        user.state = STATE_NORMAL
                         return bot.telegram.sendMessage(chatId, 'Ожидалась оценка.\nПопробуйте ещё раз, используя команду /count_marks', {
                             reply_markup: {
                                 remove_keyboard: true
@@ -510,7 +509,7 @@ bot.on('message', async ctx => {
                         wannaUpBtn
                     )
                 } catch (e) {
-                    state = STATE_NORMAL
+                    user.state = STATE_NORMAL
                     await handleAnError({e, chatId})
                 }
             })()
@@ -598,7 +597,7 @@ bot.on('callback_query', async msg => {
         await (async () => {
             try {
                 //если нажал на кнопку "не устраивает"
-                state = STATE_NORMAL;
+                user.state = STATE_NORMAL;
                 let min: number = -1;
                 //если оценка 3.22 -> предлагаем 4, 5
                 //если оценка 3.79 -> предлагаем 5 потому что у него уже есть 4ка

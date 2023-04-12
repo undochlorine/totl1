@@ -1,4 +1,4 @@
-import {InlineKeyboard, TimetableForDay} from "./types";
+import {InlineKeyboard, State, TimetableForDay} from "./types";
 
 export interface Week {
     "monday": TimetableForDay,
@@ -16,7 +16,8 @@ export interface User {
     gpa: undefined | number,
     wannaVariants: undefined | number[],
     marks: number[],
-    nth: number
+    nth: number,
+    state: State
 }
 export interface ErrorAction {
     chatId: number,
