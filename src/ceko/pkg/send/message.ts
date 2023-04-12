@@ -1,3 +1,4 @@
+import axios from 'axios'
 import { BotMessage } from '../../types'
 
 async function Message(botUrl: string, chatId: number, message: string): Promise<void> {
@@ -6,13 +7,11 @@ async function Message(botUrl: string, chatId: number, message: string): Promise
 		text: message
 	};
 
-	const response = await fetch(`${botUrl}/sendMessage`, {
-		method: 'POST',
-		headers: {
+	const response = await axios.post(`${botUrl}/sendMessage`, messageToSend, {
+      headers: {
 			'Content-Type': 'application/json',
-		},
-		body: JSON.stringify(messageToSend),
-	});
+      },
+   });
 }
 
 export default {

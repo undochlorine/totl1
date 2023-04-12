@@ -1,7 +1,8 @@
 import * as fs from 'fs';
 import * as path from 'path'
 
-const stickersPath = path.join(__dirname, '../../../ceko/assets/stickers/stickers.json');
+// const stickersPath = path.join(__dirname, '../../../ceko/assets/stickers/stickers.json');
+const stickersPath = path.join(__dirname, '../../../../../src/ceko/assets/stickers/stickers.json');
 
 let stickersData: { Stickers: string[] };
 

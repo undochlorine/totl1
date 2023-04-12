@@ -33,6 +33,10 @@ const fs_1 = require("fs");
 const states_1 = require("./states");
 const stickers_1 = __importDefault(require("./stickers"));
 const dotenv = __importStar(require("dotenv"));
+const generate_1 = __importDefault(require("./ceko/pkg/service/generate/generate"));
+const handle_1 = __importDefault(require("./ceko/pkg/service/handle/handle"));
+const path_1 = __importDefault(require("path"));
+const randomSticker_1 = __importDefault(require("./ceko/pkg/service/get/randomSticker"));
 moment_timezone_1.default.tz.setDefault('Europe/Chisinau');
 dotenv.config();
 const port = Number(process.env.PORT) || 3000;
@@ -49,6 +53,8 @@ let prtta = './';
     }
 })();
 let json_path = `${prtta}fake_json/lyceum.json`;
+const botAPI = "https://api.telegram.org/bot";
+const botUrl = botAPI + process.env.TELEGRAM_BOT_TOKEN;
 const bot = new telegraf_1.Telegraf(process.env.TELEGRAM_BOT_TOKEN || '');
 const users = [];
 function handleAnError(action) {
@@ -134,10 +140,14 @@ bot.telegram.setMyCommands([
     { command: '/timetable_tomorrow', description: 'Расписание на завтра.' },
     { command: '/count_marks', description: 'Узнать средний бал.' },
     { command: '/events', description: 'Последние события в лицее и в мире.' },
+    { command: '/library', description: 'Получите доступ ко всей библиотеке знаний:' },
     { command: '/feedback', description: 'Обратная связь' }
 ]);
 bot.command('feedback', async (ctx) => {
-    await bot.telegram.sendMessage(ctx.chat.id, 'По вопросам и для обратной связи писать:\nhttps://t.me/jastnaim');
+    await bot.telegram.sendMessage(ctx.chat.id, 'По вопросам и для обратной связи писать:\nhttps://t.me/undochlorine');
+});
+bot.on("sticker", async (ctx) => {
+    await bot.telegram.sendSticker(ctx.chat.id, randomSticker_1.default.RandomSticker());
 });
 bot.on('message', async (ctx) => {
     try {
@@ -471,6 +481,29 @@ bot.on('message', async (ctx) => {
             })();
             return 1;
         }
+        else if (textLC === '/library') {
+            (async () => {
+                try {
+                    const kbd = {
+                        reply_markup: {
+                            inline_keyboard: [
+                                [
+                                    {
+                                        text: "ЦЭКО",
+                                        callback_data: "library;ceko;"
+                                    }
+                                ]
+                            ]
+                        }
+                    };
+                    return bot.telegram.sendMessage(chatId, `Доступные ресурсы:`, kbd);
+                }
+                catch (e) {
+                    await handleAnError({ e, chatId });
+                }
+            })();
+            return;
+        }
         else if (textLC === 'не спишь?') {
             await (async () => {
                 try {
@@ -616,6 +649,101 @@ bot.on('callback_query', async (msg) => {
                 await handleAnError({ e, chatId });
             }
         })();
+    }
+    else if (data.slice(0, "library;".length) === "library;") {
+        if (data === "library;") {
+            try {
+                const kbd = {
+                    reply_markup: {
+                        inline_keyboard: [
+                            [
+                                {
+                                    text: "ЦЭКО",
+                                    callback_data: "library;ceko;"
+                                }
+                            ]
+                        ]
+                    }
+                };
+                return bot.telegram.sendMessage(chatId, `Доступные ресурсы:`, kbd);
+            }
+            catch (e) {
+                await handleAnError({ e, chatId });
+            }
+        }
+        else {
+            let deepData = data.replace("library;", "");
+            if (deepData.slice(0, "ceko;".length) === "ceko;") {
+                if (deepData === "ceko;") {
+                    try {
+                        const kbd = {
+                            reply_markup: {
+                                inline_keyboard: [
+                                    [
+                                        {
+                                            text: "Математика",
+                                            callback_data: "library;ceko;math;"
+                                        }
+                                    ],
+                                    [
+                                        {
+                                            text: "⏪ Сменить ресурс",
+                                            callback_data: "library;"
+                                        }
+                                    ]
+                                ]
+                            }
+                        };
+                        return bot.telegram.sendMessage(chatId, `Выберете предмет:`, kbd);
+                    }
+                    catch (e) {
+                        await handleAnError({ e, chatId });
+                    }
+                }
+                else {
+                    deepData = deepData.replace("ceko;", "");
+                    if (deepData.slice(0, "math;".length) === "math;") {
+                        if (deepData === "math;") {
+                            try {
+                                const kbd = generate_1.default.GridInt(21, 4, "library;ceko;math;");
+                                return bot.telegram.sendMessage(chatId, `Номера доступных заданий:`, kbd);
+                            }
+                            catch (e) {
+                                await handleAnError({ e, chatId });
+                            }
+                        }
+                        else {
+                            deepData = deepData.replace("math;", "");
+                            let requestingBlock = "";
+                            while (deepData[requestingBlock.length] !== ";") {
+                                requestingBlock += deepData[requestingBlock.length];
+                            }
+                            let requestingBlockIndex = Number(requestingBlock);
+                            if (isNaN(requestingBlockIndex)) {
+                                console.log("wrong task request");
+                            }
+                            else {
+                                let cekoData;
+                                const jsonPath = path_1.default.resolve(__dirname, "../src/ceko/assets/ceko/tasks.json");
+                                (0, fs_1.readFile)(jsonPath, 'utf-8', (err, data) => {
+                                    if (err) {
+                                        console.error("failed to read data of tasks");
+                                        console.log(err);
+                                        return;
+                                    }
+                                    cekoData = JSON.parse(data);
+                                    handle_1.default.TaskQuery(botUrl, chatId, "math;", deepData, requestingBlock + ";", cekoData.MathBlocks[Object.keys(cekoData.MathBlocks)[requestingBlockIndex - 1]]).then(er => {
+                                        if (er !== "") {
+                                            console.log(err);
+                                        }
+                                    });
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
     return 1;
 });

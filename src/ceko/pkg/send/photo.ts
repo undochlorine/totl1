@@ -1,3 +1,4 @@
+import axios from 'axios'
 import { BotPhoto } from '../../types'
 
 async function Photo(botUrl: string, chatId: number, url: string): Promise<void> {
@@ -6,12 +7,10 @@ async function Photo(botUrl: string, chatId: number, url: string): Promise<void>
 		photo: url
 	};
 
-	const response = await fetch(`${botUrl}/sendPhoto`, {
-		method: 'POST',
+	const response = await axios.post(`${botUrl}/sendPhoto`, botPhoto, {
 		headers: {
 			'Content-Type': 'application/json',
 		},
-		body: JSON.stringify(botPhoto),
 	});
 }
 
@@ -38,12 +37,10 @@ async function PhotosGroup(botUrl: string, chatId: number, urls: string[]): Prom
 		})
 	}
 
-	const response = await fetch(`${botUrl}/sendMediaGroup`, {
-		method: 'POST',
+	const response = await axios.post(`${botUrl}/sendMediaGroup`, botPhotos, {
 		headers: {
 			'Content-Type': 'application/json',
 		},
-		body: JSON.stringify(botPhotos),
 	});
 }
 

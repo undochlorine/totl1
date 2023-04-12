@@ -1,6 +1,6 @@
-import types from "../../../types"
+import types from "../../../../declaration/interfaces"
 
-function GridInt(amountOfBlocks, columns: number, callbackDataPrefix: string): types.InlineKeyboardMarkup {
+function GridInt(amountOfBlocks: number, columns: number, callbackDataPrefix: string): types.IMarkup {
 	let rows
 	let rest = 0
 	if (amountOfBlocks % columns === 0) {
@@ -9,7 +9,7 @@ function GridInt(amountOfBlocks, columns: number, callbackDataPrefix: string): t
 		rows = Math.floor(amountOfBlocks / columns) + 1
 		rest = amountOfBlocks % columns
 	}
-	const inlineKeyboard: (types.InlineKeyboardButton)[][] = []
+	const inlineKeyboard: (types.MarkupItem)[][] = []
 	for (let i = 0; i < rows; i++) {
 		if (i === rows - 1 && rest !== 0) {
 			inlineKeyboard[i] = new Array(rest)
@@ -31,7 +31,7 @@ function GridInt(amountOfBlocks, columns: number, callbackDataPrefix: string): t
 		callbackDataPrefix.length - 1
 	)
 	while (true) {
-		if (callbackDataToGetBack[callbackDataPrefix.length - 1] === ";") {
+		if (callbackDataToGetBack.length <= 0 || callbackDataToGetBack[callbackDataToGetBack.length - 1] === ";") {
 			break;
 		}
 		callbackDataToGetBack = callbackDataToGetBack.slice(
@@ -45,13 +45,14 @@ function GridInt(amountOfBlocks, columns: number, callbackDataPrefix: string): t
 			callback_data: callbackDataToGetBack
 		}
 	])
-	const kbd: types.InlineKeyboardMarkup = {
-		inline_keyboard: inlineKeyboard
-	}
-	return kbd
+	return {
+		reply_markup: {
+			inline_keyboard: inlineKeyboard
+		}
+	} as types.IMarkup
 }
 
-function GridIntervalString(interval: string[][], columns: number, callbackDataPrefix: string): types.InlineKeyboardMarkup {
+function GridIntervalString(interval: string[][], columns: number, callbackDataPrefix: string): types.IMarkup {
 	const amountOfBlocks = interval.length
 	let rows: number;
 	let rest = 0;
@@ -61,7 +62,7 @@ function GridIntervalString(interval: string[][], columns: number, callbackDataP
 		rows = Math.floor(amountOfBlocks / columns) + 1
 		rest = amountOfBlocks % columns
 	}
-	const inlineKeyboard: types.InlineKeyboardButton[][] = [];
+	const inlineKeyboard: types.MarkupItem[][] = [];
 	for (let i = 0; i < rows; i++) {
 		if (i === rows - 1 && rest !== 0) {
 			inlineKeyboard[i] = new Array(rest)
@@ -79,10 +80,11 @@ function GridIntervalString(interval: string[][], columns: number, callbackDataP
 			}
 		}
 	}
-	const kbd: types.InlineKeyboardMarkup = {
-		inline_keyboard: inlineKeyboard
-	}
-	return kbd
+	return {
+		reply_markup: {
+			inline_keyboard: inlineKeyboard
+		}
+	} as types.IMarkup
 }
 
 

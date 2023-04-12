@@ -1,3 +1,4 @@
+import axios from 'axios'
 import { BotSticker } from '../../types'
 import get from '../service/get/randomSticker'
 
@@ -7,13 +8,11 @@ async function Sticker(botUrl: string, update: any): Promise<void> {
 		sticker: get.RandomSticker()
 	}
 
-	const response = await fetch(`${botUrl}/sendSticker`, {
-		method: 'POST',
-		headers: {
+	const response = await axios.post(`${botUrl}/sendSticker`, botSticker, {
+      headers: {
 			'Content-Type': 'application/json',
-		},
-		body: JSON.stringify(botSticker),
-	});
+      },
+   });
 }
 
 export default {

@@ -1,5 +1,5 @@
 function Interval(tasksBlock: string[][], str: string): [number, string] {
-	let targetStart, targetEnd = ""
+	let targetStart = "", targetEnd = ""
 	let facedDash = false
 	for (const c of str) {
 		if (c != "-" && !facedDash) {
